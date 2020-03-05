@@ -1,16 +1,13 @@
 import React from 'react';
-import logo from '../logo.png';
-import clientBinary from '../clientbinary';
 import './App.css';
-import Button from "@material-ui/core/Button";
+import Main from "./Main";
 
-const App = () => (
+function App() {
+  return (
     <div className="App">
-        <img src={logo} alt="logo" className="App-logo"/>
-        <Button variant="contained" color="primary" href={clientBinary} download>
-            Download Client
-        </Button>
+      {/*<Navbar />*/}
+      <Main />
     </div>
-);
-
+  );
+}
 export default App;

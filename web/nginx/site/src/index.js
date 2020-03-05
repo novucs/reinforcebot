@@ -2,17 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import * as serviceWorker from './serviceWorker';
-import {hashHistory as history, Router} from 'react-router';
-// Your routes.js file
-import routes from './routes';
+import {BrowserRouter} from "react-router-dom";
+import App from "./components/App";
 
-
-// ReactDOM.render(
-//     <App />,
-//     document.getElementById('root')
-// );
 ReactDOM.render(
-    <Router routes={routes} history={history}/>,
+    <BrowserRouter>
+        <App/>
+    </BrowserRouter>,
     document.getElementById('root')
 );
 
