@@ -1,6 +1,6 @@
 import React from 'react';
-import logo from './logo.png';
-import clientBinary from './clientbinary';
+import logo from '../logo.png';
+import clientBinary from '../clientbinary';
 import './App.css';
 import Button from "@material-ui/core/Button";
 
