@@ -1,9 +1,11 @@
-from django.contrib.auth import get_user_model
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 
-from web.serializers import UserSerializer
+from web.models import Agent
+from web.serializers import AgentSerializer
 
 
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = get_user_model().objects.all()
-    serializer_class = UserSerializer
+class AgentViewSet(viewsets.ModelViewSet):
+    queryset = Agent.objects.all()
+    serializer_class = AgentSerializer
+    permission_classes = (IsAuthenticated,)

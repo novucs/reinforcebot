@@ -1,10 +1,9 @@
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from web.models import Agent
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
-    password = serializers.CharField(write_only=True)
 
+class AgentSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = get_user_model()
-        fields = ['url', 'username', 'email', 'is_staff', 'password']
+        model = Agent
+        fields = ('name',)
