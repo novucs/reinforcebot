@@ -16,9 +16,11 @@ INSTALLED_APPS = [
     'djoser',
     'simple_history',
     'web',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -92,3 +94,7 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
    'AUTH_HEADER_TYPES': ('JWT',),
 }
+
+CORS_ORIGIN_WHITELIST = [
+    "http://localhost:3000",
+]
