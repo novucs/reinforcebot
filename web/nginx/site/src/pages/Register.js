@@ -25,7 +25,24 @@ export default class Register extends React.Component {
                 username: this.state.username,
                 password: this.state.password,
             }),
-        }).then(r => console.log(r));
+        }).then(response => {
+            return response.json();
+        }).then(body => {
+            console.log(body);
+            if ('username' in body) {
+                console.log(body['username']);
+                return;
+            }
+
+            if ('password' in body) {
+                console.log(body['password']);
+                return;
+            }
+
+            if (200 <= response.status && response.status < 300) {
+                console.log("Register success");
+            }
+        });
     };
 
     render() {
