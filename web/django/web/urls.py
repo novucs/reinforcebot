@@ -8,7 +8,7 @@ router = routers.DefaultRouter()
 router.register(r'agents', AgentViewSet)
 
 urlpatterns = [
-    url(r'^', include(router.urls)),
-    path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
+    url(r'^api/', include(router.urls)),
+    path('api/auth/', include('djoser.urls')),
+    path('api/auth/', include('djoser.urls.jwt')),
 ]
