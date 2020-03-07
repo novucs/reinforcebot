@@ -100,3 +100,13 @@ SIMPLE_JWT = {
 CORS_ORIGIN_WHITELIST = [
     "http://localhost:3000",
 ]
+
+SWAGGER_SETTINGS = {
+   'SECURITY_DEFINITIONS': {
+        'JWT': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    }
+}
