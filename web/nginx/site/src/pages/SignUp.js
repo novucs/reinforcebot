@@ -10,27 +10,10 @@ import Link from "@material-ui/core/Link";
 import Box from "@material-ui/core/Box";
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import withStyles from "@material-ui/core/styles/withStyles";
+import {Copyright} from "../Copywrite";
+import displayError from '../Util';
 
 // import logo from '../logo.png';
-
-function displayError(error) {
-  if (error == null) return '';
-  if (error instanceof Array) return error.join("\r\n");
-  return error;
-}
-
-function Copyright() {
-  return (
-    <Typography variant="body2" color="textSecondary" align="center">
-      {'Copyright © '}
-      <Link color="inherit" href="https://novucs.net/">
-        ReinforceBot
-      </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
-    </Typography>
-  );
-}
 
 const styles = theme => ({
   paper: {
@@ -53,7 +36,7 @@ const styles = theme => ({
 });
 
 
-class Register extends React.Component {
+class SignUp extends React.Component {
 
   constructor(props) {
     super(props);
@@ -97,8 +80,14 @@ class Register extends React.Component {
         return;
       }
 
-      console.log("Register success");
+      console.log("SignUp success");
     });
+  };
+
+  keyPress = (event) => {
+    if (event.keyCode === 13 && this.ableToSubmit(event)) {
+      this.submit(event);
+    }
   };
 
   ableToSubmit = (event) => {
@@ -122,7 +111,7 @@ class Register extends React.Component {
           <Typography component="h1" variant="h5">
             Sign up
           </Typography>
-          <form className={classes.form} noValidate>
+          <form className={classes.form} onSubmit={this.submit} noValidate>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <TextField
@@ -131,6 +120,7 @@ class Register extends React.Component {
                   label="First Name"
                   variant="outlined"
                   autoComplete="fname"
+                  onKeyDown={this.keyPress}
                   error={this.state.firstNameError !== ''}
                   helperText={this.state.firstNameError}
                   onChange={event => this.setState({firstName: event.target.value})}
@@ -146,11 +136,12 @@ class Register extends React.Component {
                   label="Last Name"
                   variant="outlined"
                   autoComplete="lname"
+                  fullWidth
+                  required
+                  onKeyDown={this.keyPress}
                   error={this.state.lastNameError !== ''}
                   helperText={this.state.lastNameError}
                   onChange={event => this.setState({lastName: event.target.value})}
-                  fullWidth
-                  required
                 />
               </Grid>
               <Grid item xs={12}>
@@ -162,6 +153,7 @@ class Register extends React.Component {
                   autoComplete="uname"
                   fullWidth
                   required
+                  onKeyDown={this.keyPress}
                   error={this.state.usernameError !== ''}
                   helperText={this.state.usernameError}
                   onChange={event => this.setState({username: event.target.value})}
@@ -174,11 +166,12 @@ class Register extends React.Component {
                   label="Email Address"
                   variant="outlined"
                   autoComplete="email"
+                  fullWidth
+                  required
+                  onKeyDown={this.keyPress}
                   error={this.state.emailError !== ''}
                   helperText={this.state.emailError}
                   onChange={event => this.setState({email: event.target.value})}
-                  fullWidth
-                  required
                 />
               </Grid>
               <Grid item xs={12}>
@@ -191,6 +184,7 @@ class Register extends React.Component {
                   autoComplete="current-password"
                   fullWidth
                   required
+                  onKeyDown={this.keyPress}
                   error={this.state.passwordError !== ''}
                   helperText={this.state.passwordError}
                   onChange={event => this.setState({password: event.target.value})}
@@ -209,7 +203,7 @@ class Register extends React.Component {
             </Button>
             <Grid container justify="flex-end">
               <Grid item>
-                <Link href="#" variant="body2">
+                <Link href="/signin" variant="body2">
                   Already have an account? Sign in
                 </Link>
               </Grid>
@@ -224,4 +218,4 @@ class Register extends React.Component {
   }
 }
 
-export default withStyles(styles)(Register);
+export default withStyles(styles)(SignUp);

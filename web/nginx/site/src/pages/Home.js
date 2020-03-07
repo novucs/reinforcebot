@@ -11,9 +11,14 @@ const Home = () => (
         <Button variant="contained" color="primary" href={clientBinary} download>
             Download Client
         </Button>
-        <Link to="/register">
+        <Link to="/signup">
             <Button variant="contained" color="primary">
-                Register
+                Sign up
+            </Button>
+        </Link>
+        <Link to="/signin">
+            <Button variant="contained" color="primary">
+                Sign in
             </Button>
         </Link>
     </div>
