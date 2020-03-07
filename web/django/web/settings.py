@@ -1,9 +1,9 @@
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SECRET_KEY = os.environ.get('SECRET_KEY')
-DEBUG = int(os.environ.get("DEBUG", default=0))
-ALLOWED_HOSTS = list(filter(None, os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")))
+SECRET_KEY = os.environ.get('SECRET_KEY', default="secret")
+DEBUG = int(os.environ.get("DEBUG", default=1))
+ALLOWED_HOSTS = list(filter(None, os.environ.get("DJANGO_ALLOWED_HOSTS", default="").split(" ")))
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -15,8 +15,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'djoser',
     'simple_history',
-    'web',
     'corsheaders',
+    'drf_yasg',
+    'web',
 ]
 
 MIDDLEWARE = [
@@ -84,6 +85,7 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

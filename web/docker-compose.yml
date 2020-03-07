@@ -4,7 +4,8 @@ services:
     build: ./django
     command: python manage.py migrate && gunicorn web.wsgi:application --reload --bind 0.0.0.0:8000
     volumes:
-      - ./django:/usr/src/app
+      - ./django:/usr/src/app/
+      - static_data:/usr/src/app/static/
     env_file:
       - ./django/.env.dev
     depends_on:
@@ -21,6 +22,8 @@ services:
 
   nginx:
     build: ./nginx
+    volumes:
+      - static_data:/usr/share/nginx/static/
     ports:
       - 8080:80
     depends_on:
@@ -28,3 +31,4 @@ services:
 
 volumes:
   postgres_data:
+  static_data:

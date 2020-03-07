@@ -8,3 +8,4 @@ djoser==2.0.3
 djangorestframework_simplejwt==4.4.0
 django-simple-history==2.8.0
 django-cors-headers==3.2.1
+drf-yasg==1.17.1
