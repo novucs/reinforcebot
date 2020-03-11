@@ -64,6 +64,7 @@ export default class TopMenu extends Component {
             </div>
             <div hidden={!hasJWT()}>
               <Dropdown
+                className="simple"
                 trigger={(
                   <span>
                     <Icon name='user'/> Hello, {this.state.username}
