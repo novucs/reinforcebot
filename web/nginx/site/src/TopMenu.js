@@ -1,17 +1,49 @@
 import React, {Component} from "react";
-import {Button, Container, Menu} from "semantic-ui-react";
-import {hasJWT} from "./Util";
+import {Button, Container, Dropdown, Icon, Menu} from "semantic-ui-react";
+import {BASE_URL, getJWT, hasJWT} from "./Util";
 
 export default class TopMenu extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {};
+  }
 
   signOut() {
     window.localStorage.setItem('jwtAccess', null);
     window.localStorage.setItem('jwtRefresh', null);
-    console.log("called");
-    window.location = '/';
+    window.location = '/signin';
+  }
+
+  componentDidMount() {
+    if (hasJWT()) {
+      fetch(BASE_URL + '/api/auth/users/me/', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'JWT ' + getJWT(),
+        },
+      }).then(response => {
+        if (response.status < 200 || response.status >= 300) {
+          this.signOut();
+          return;
+        }
+
+        this.setState({errors: []});
+        response.json().then(body => {
+          this.setState({
+            username: body['username'],
+            firstName: body['first_name'],
+            lastName: body['last_name'],
+          });
+        });
+      });
+    }
   }
 
   render() {
+
+
     return (
       <Menu fixed='top' size='large' inverted>
         <Container>
@@ -31,9 +63,25 @@ export default class TopMenu extends Component {
               </Button>
             </div>
             <div hidden={!hasJWT()}>
-              <Button onClick={this.signOut} negative>
-                Sign Out
-              </Button>
+              <Dropdown
+                trigger={(
+                  <span>
+                    <Icon name='user'/> Hello, {this.state.username}
+                  </span>
+                )}
+                options={[
+                  {
+                    key: 'user',
+                    text: (
+                      <span>
+                        Signed in as <strong>{this.state.firstName} {this.state.lastName}</strong>
+                      </span>
+                    ),
+                    disabled: true,
+                  },
+                  {key: 'sign-out', text: 'Sign Out', icon: 'sign out', onClick: this.signOut},
+                ]}
+              />
             </div>
           </Menu.Item>
         </Container>

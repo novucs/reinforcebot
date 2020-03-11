@@ -1,3 +1,5 @@
+export const BASE_URL = 'http://localhost:8080';
+
 export function displayErrors(...errors) {
   return errors.flatMap((e) => displayError(e));
 }
@@ -18,13 +20,41 @@ export function getJWT() {
 }
 
 export function ensureSignedIn() {
-    if (!hasJWT()) {
-      window.location = '/signin';
-    }
+  if (!hasJWT()) {
+    window.location = '/signin';
+  }
 }
 
 export function ensureSignedOut() {
-    if (hasJWT()) {
-      window.location = '/dashboard';
+  if (hasJWT()) {
+    window.location = '/dashboard';
+  }
+}
+
+export function signIn(username, password, callback) {
+  fetch(BASE_URL + '/api/auth/jwt/create/', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      username: username,
+      password: password,
+    }),
+  }).then(response => {
+    if (response.status < 200 || response.status >= 300) {
+      response.json().then(body => {
+        callback(displayError(body['detail']));
+      });
+      return;
     }
+
+    callback([]);
+    response.json().then(body => {
+      window.localStorage.setItem('jwtAccess', body['access']);
+      window.localStorage.setItem('jwtRefresh', body['refresh']);
+      window.location = '/dashboard';
+    });
+  });
 }

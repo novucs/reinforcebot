@@ -1,5 +1,5 @@
 import React from 'react';
-import displayError, {ensureSignedOut} from '../Util';
+import {ensureSignedOut, signIn} from '../Util';
 import {Button, Form, Grid, Header, Message, Segment} from "semantic-ui-react";
 import logo from '../icon.svg'
 import TopMenu from "../TopMenu";
@@ -16,30 +16,8 @@ export default class SignIn extends React.Component {
   }
 
   submit = (event) => {
-    fetch('http://localhost:8080/api/auth/jwt/create/', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: this.state.username,
-        password: this.state.password,
-      }),
-    }).then(response => {
-      if (response.status < 200 || response.status >= 300) {
-        response.json().then(body => {
-          this.setState({errors: displayError(body['detail'])});
-        });
-        return;
-      }
-
-      this.setState({errors: []});
-      response.json().then(body => {
-        window.localStorage.setItem('jwtAccess', body['access']);
-        window.localStorage.setItem('jwtRefresh', body['refresh']);
-        console.log("SignIn success");
-      });
+    signIn(this.state.username, this.state.password, (errors) => {
+      this.setState({errors: errors});
     });
   };
 
@@ -101,7 +79,7 @@ export default class SignIn extends React.Component {
               list={this.state.errors}
               hidden={this.state.errors.length === 0}
             />
-            <Message>
+            <Message info>
               New to us? <a href="/signup">Sign Up</a>
             </Message>
           </Grid.Column>

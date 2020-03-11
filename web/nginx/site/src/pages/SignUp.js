@@ -1,5 +1,5 @@
 import React from 'react';
-import {displayErrors, ensureSignedOut} from '../Util';
+import {BASE_URL, displayErrors, ensureSignedOut, signIn} from '../Util';
 import {Button, Form, Grid, Header, Message, Segment} from "semantic-ui-react";
 import logo from "../icon.svg";
 import TopMenu from "../TopMenu";
@@ -20,7 +20,7 @@ export default class SignUp extends React.Component {
   }
 
   submit = (event) => {
-    fetch('http://localhost:8080/api/auth/users/', {
+    fetch(BASE_URL + '/api/auth/users/', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -49,7 +49,9 @@ export default class SignUp extends React.Component {
       }
 
       this.setState({errors: []});
-      console.log("SignUp success");
+      signIn(this.state.username, this.state.password, (errors) => {
+      this.setState({errors: errors});
+      });
     });
   };
 
@@ -134,7 +136,7 @@ export default class SignUp extends React.Component {
               list={this.state.errors}
               hidden={this.state.errors.length === 0}
             />
-            <Message>
+            <Message info>
               Already have an account? <a href="/signin">Sign In</a>
             </Message>
           </Grid.Column>
