@@ -1,42 +1,9 @@
 import React from 'react';
-// import Button from "@material-ui/core/Button";
-// import TextField from "@material-ui/core/TextField";
-// import {Container} from "@material-ui/core";
-// import Grid from "@material-ui/core/Grid";
-// import Typography from "@material-ui/core/Typography";
-// import CssBaseline from "@material-ui/core/CssBaseline";
-// import Avatar from "@material-ui/core/Avatar";
-// import Link from "@material-ui/core/Link";
-// import Box from "@material-ui/core/Box";
-// import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
-// import withStyles from "@material-ui/core/styles/withStyles";
-// import {Copyright} from "../Copywrite";
-import displayError, {displayErrors} from '../Util';
+import {displayErrors} from '../Util';
 import {Button, Form, Grid, Header, Message, Segment} from "semantic-ui-react";
 import logo from "../icon.svg";
-
-// import logo from '../logo.png';
-
-// const styles = theme => ({
-//   paper: {
-//     marginTop: theme.spacing(8),
-//     display: 'flex',
-//     flexDirection: 'column',
-//     alignItems: 'center',
-//   },
-//   avatar: {
-//     margin: theme.spacing(1),
-//     backgroundColor: theme.palette.secondary.main,
-//   },
-//   form: {
-//     width: '100%', // Fix IE 11 issue.
-//     marginTop: theme.spacing(3),
-//   },
-//   submit: {
-//     margin: theme.spacing(3, 0, 2),
-//   },
-// });
-
+import TopMenu from "../TopMenu";
+import Footer from "../Footer";
 
 export default class SignUp extends React.Component {
 
@@ -102,72 +69,76 @@ export default class SignUp extends React.Component {
 
   render() {
     return (
-      <Grid textAlign='center' style={{height: '100vh'}} verticalAlign='middle'>
-        <Grid.Column style={{maxWidth: 450}}>
-          <Header as="h2" color="teal" textAlign="center">
-            <img src={logo} alt="logo" className="image"/>{" "}
-            Create a new account
-          </Header>
-          <Form size="large">
-            <Segment stacked>
-              <Form.Input
-                fluid
-                placeholder="First name"
-                onKeyDown={this.keyPress}
-                onChange={event => this.setState({firstName: event.target.value})}
-              />
-              <Form.Input
-                fluid
-                placeholder="Last name"
-                onKeyDown={this.keyPress}
-                onChange={event => this.setState({lastName: event.target.value})}
-              />
-              <Form.Input
-                fluid
-                icon="envelope"
-                iconPosition="left"
-                placeholder="Email"
-                onKeyDown={this.keyPress}
-                onChange={event => this.setState({email: event.target.value})}
-              />
-              <Form.Input
-                fluid
-                icon="user"
-                iconPosition="left"
-                placeholder="Username"
-                onKeyDown={this.keyPress}
-                onChange={event => this.setState({username: event.target.value})}
-              />
-              <Form.Input
-                fluid
-                icon="lock"
-                iconPosition="left"
-                placeholder="Password"
-                type="password"
-                onKeyDown={this.keyPress}
-                onChange={event => this.setState({password: event.target.value})}
-              />
-              <Button
-                color="teal"
-                fluid size="large"
-                disabled={!this.ableToSubmit()}
-                onClick={this.submit}
-              >
-                Sign in
-              </Button>
-            </Segment>
-          </Form>
-          <Message
-            error
-            header='Sign Up Unsuccessful'
-            list={this.state.errors}
-            hidden={this.state.errors.length === 0}
-          />
-          <Message>
-            New to us? <a href="/signin">Sign In</a>
-          </Message>
-        </Grid.Column>
-      </Grid>
+      <div className='SitePage'>
+        <TopMenu/>
+        <Grid textAlign='center' className='SiteContents' verticalAlign='middle'>
+          <Grid.Column style={{maxWidth: 450}}>
+            <Header as="h2" color="teal" textAlign="center">
+              <img src={logo} alt="logo" className="image"/>{" "}
+              Create a new account
+            </Header>
+            <Form size="large">
+              <Segment stacked>
+                <Form.Input
+                  fluid
+                  placeholder="First name"
+                  onKeyDown={this.keyPress}
+                  onChange={event => this.setState({firstName: event.target.value})}
+                />
+                <Form.Input
+                  fluid
+                  placeholder="Last name"
+                  onKeyDown={this.keyPress}
+                  onChange={event => this.setState({lastName: event.target.value})}
+                />
+                <Form.Input
+                  fluid
+                  icon="envelope"
+                  iconPosition="left"
+                  placeholder="Email"
+                  onKeyDown={this.keyPress}
+                  onChange={event => this.setState({email: event.target.value})}
+                />
+                <Form.Input
+                  fluid
+                  icon="user"
+                  iconPosition="left"
+                  placeholder="Username"
+                  onKeyDown={this.keyPress}
+                  onChange={event => this.setState({username: event.target.value})}
+                />
+                <Form.Input
+                  fluid
+                  icon="lock"
+                  iconPosition="left"
+                  placeholder="Password"
+                  type="password"
+                  onKeyDown={this.keyPress}
+                  onChange={event => this.setState({password: event.target.value})}
+                />
+                <Button
+                  color="teal"
+                  fluid size="large"
+                  disabled={!this.ableToSubmit()}
+                  onClick={this.submit}
+                >
+                  Sign in
+                </Button>
+              </Segment>
+            </Form>
+            <Message
+              error
+              header='Sign Up Unsuccessful'
+              list={this.state.errors}
+              hidden={this.state.errors.length === 0}
+            />
+            <Message>
+              New to us? <a href="/signin">Sign In</a>
+            </Message>
+          </Grid.Column>
+        </Grid>
+        <Footer/>
+      </div>
     );
   }
 }

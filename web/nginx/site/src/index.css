@@ -11,3 +11,13 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.SitePage {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.SiteContents {
+  flex: 1;
+}

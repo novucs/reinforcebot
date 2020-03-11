@@ -2,10 +2,10 @@ import React from 'react';
 import displayError from '../Util';
 import {Button, Form, Grid, Header, Message, Segment} from "semantic-ui-react";
 import logo from '../icon.svg'
-
+import TopMenu from "../TopMenu";
+import Footer from "../Footer";
 
 export default class SignIn extends React.Component {
-
   constructor(props) {
     super(props);
     this.state = {
@@ -34,7 +34,7 @@ export default class SignIn extends React.Component {
         return;
       }
 
-        this.setState({errors: []});
+      this.setState({errors: []});
       console.log("SignIn success");
       response.json().then(body => {
         // window.localStorage.setItem('jwtAccess', body['access']);
@@ -55,54 +55,57 @@ export default class SignIn extends React.Component {
   };
 
   render() {
-    const {classes} = this.props;
     return (
-      <Grid textAlign='center' style={{height: '100vh'}} verticalAlign='middle'>
-        <Grid.Column style={{maxWidth: 450}}>
-          <Header as="h2" color="teal" textAlign="center">
-            <img src={logo} alt="logo" className="image"/>{" "}
-            Sign-in to your account
-          </Header>
-          <Form size="large">
-            <Segment stacked>
-              <Form.Input
-                fluid
-                icon="user"
-                iconPosition="left"
-                placeholder="Username"
-                onKeyDown={this.keyPress}
-                onChange={event => this.setState({username: event.target.value})}
-              />
-              <Form.Input
-                fluid
-                icon="lock"
-                iconPosition="left"
-                placeholder="Password"
-                type="password"
-                onKeyDown={this.keyPress}
-                onChange={event => this.setState({password: event.target.value})}
-              />
-              <Button
-                color="teal"
-                fluid size="large"
-                disabled={!this.ableToSubmit()}
-                onClick={this.submit}
-              >
-                Sign in
-              </Button>
-            </Segment>
-          </Form>
-          <Message
-            error
-            header='Sign In Unsuccessful'
-            list={this.state.errors}
-            hidden={this.state.errors.length === 0}
-          />
-          <Message>
-            New to us? <a href="/signup">Sign Up</a>
-          </Message>
-        </Grid.Column>
-      </Grid>
+      <div className='SitePage'>
+        <TopMenu/>
+        <Grid textAlign='center' className='SiteContents' verticalAlign='middle'>
+          <Grid.Column style={{maxWidth: 450}}>
+            <Header as="h2" color="teal" textAlign="center">
+              <img src={logo} alt="logo" className="image"/>{" "}
+              Sign-in to your account
+            </Header>
+            <Form size="large">
+              <Segment stacked>
+                <Form.Input
+                  fluid
+                  icon="user"
+                  iconPosition="left"
+                  placeholder="Username"
+                  onKeyDown={this.keyPress}
+                  onChange={event => this.setState({username: event.target.value})}
+                />
+                <Form.Input
+                  fluid
+                  icon="lock"
+                  iconPosition="left"
+                  placeholder="Password"
+                  type="password"
+                  onKeyDown={this.keyPress}
+                  onChange={event => this.setState({password: event.target.value})}
+                />
+                <Button
+                  color="teal"
+                  fluid size="large"
+                  disabled={!this.ableToSubmit()}
+                  onClick={this.submit}
+                >
+                  Sign in
+                </Button>
+              </Segment>
+            </Form>
+            <Message
+              error
+              header='Sign In Unsuccessful'
+              list={this.state.errors}
+              hidden={this.state.errors.length === 0}
+            />
+            <Message>
+              New to us? <a href="/signup">Sign Up</a>
+            </Message>
+          </Grid.Column>
+        </Grid>
+        <Footer/>
+      </div>
     );
   }
 }
