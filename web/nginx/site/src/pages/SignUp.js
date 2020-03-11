@@ -1,56 +1,54 @@
 import React from 'react';
-import Button from "@material-ui/core/Button";
-import TextField from "@material-ui/core/TextField";
-import {Container} from "@material-ui/core";
-import Grid from "@material-ui/core/Grid";
-import Typography from "@material-ui/core/Typography";
-import CssBaseline from "@material-ui/core/CssBaseline";
-import Avatar from "@material-ui/core/Avatar";
-import Link from "@material-ui/core/Link";
-import Box from "@material-ui/core/Box";
-import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
-import withStyles from "@material-ui/core/styles/withStyles";
-import {Copyright} from "../Copywrite";
-import displayError from '../Util';
+// import Button from "@material-ui/core/Button";
+// import TextField from "@material-ui/core/TextField";
+// import {Container} from "@material-ui/core";
+// import Grid from "@material-ui/core/Grid";
+// import Typography from "@material-ui/core/Typography";
+// import CssBaseline from "@material-ui/core/CssBaseline";
+// import Avatar from "@material-ui/core/Avatar";
+// import Link from "@material-ui/core/Link";
+// import Box from "@material-ui/core/Box";
+// import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
+// import withStyles from "@material-ui/core/styles/withStyles";
+// import {Copyright} from "../Copywrite";
+import displayError, {displayErrors} from '../Util';
+import {Button, Form, Grid, Header, Message, Segment} from "semantic-ui-react";
+import logo from "../icon.svg";
 
 // import logo from '../logo.png';
 
-const styles = theme => ({
-  paper: {
-    marginTop: theme.spacing(8),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  avatar: {
-    margin: theme.spacing(1),
-    backgroundColor: theme.palette.secondary.main,
-  },
-  form: {
-    width: '100%', // Fix IE 11 issue.
-    marginTop: theme.spacing(3),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
-});
+// const styles = theme => ({
+//   paper: {
+//     marginTop: theme.spacing(8),
+//     display: 'flex',
+//     flexDirection: 'column',
+//     alignItems: 'center',
+//   },
+//   avatar: {
+//     margin: theme.spacing(1),
+//     backgroundColor: theme.palette.secondary.main,
+//   },
+//   form: {
+//     width: '100%', // Fix IE 11 issue.
+//     marginTop: theme.spacing(3),
+//   },
+//   submit: {
+//     margin: theme.spacing(3, 0, 2),
+//   },
+// });
 
 
-class SignUp extends React.Component {
+export default class SignUp extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {
       firstName: '',
-      firstNameError: '',
       lastName: '',
-      lastNameError: '',
       username: '',
-      usernameError: '',
       email: '',
-      emailError: '',
       password: '',
-      passwordError: '',
+      errors: [],
     }
   }
 
@@ -71,15 +69,19 @@ class SignUp extends React.Component {
     }).then(response => {
       if (response.status < 200 || response.status >= 300) {
         response.json().then(body => {
-          this.setState({firstNameError: displayError(body['first_name'] || '')});
-          this.setState({lastNameError: displayError(body['last_name'] || '')});
-          this.setState({usernameError: displayError(body['username'] || '')});
-          this.setState({emailError: displayError(body['email'] || '')});
-          this.setState({passwordError: displayError(body['password'] || '')});
+          this.setState({
+            errors: displayErrors(
+              body['first_name'],
+              body['last_name'],
+              body['username'],
+              body['email'],
+              body['password'])
+          });
         });
         return;
       }
 
+      this.setState({errors: []});
       console.log("SignUp success");
     });
   };
@@ -99,123 +101,73 @@ class SignUp extends React.Component {
   };
 
   render() {
-    const {classes} = this.props;
     return (
-      <Container component="main" maxWidth="xs">
-        {/*<img src={logo} alt="logo" className="App-logo"/>*/}
-        <CssBaseline/>
-        <div className={classes.paper}>
-          <Avatar className={classes.avatar}>
-            <LockOutlinedIcon/>
-          </Avatar>
-          <Typography component="h1" variant="h5">
-            Sign up
-          </Typography>
-          <form className={classes.form} onSubmit={this.submit} noValidate>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  id="firstName"
-                  name="firstName"
-                  label="First Name"
-                  variant="outlined"
-                  autoComplete="fname"
-                  onKeyDown={this.keyPress}
-                  error={this.state.firstNameError !== ''}
-                  helperText={this.state.firstNameError}
-                  onChange={event => this.setState({firstName: event.target.value})}
-                  fullWidth
-                  required
-                  autoFocus
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  id="lastName"
-                  name="lastName"
-                  label="Last Name"
-                  variant="outlined"
-                  autoComplete="lname"
-                  fullWidth
-                  required
-                  onKeyDown={this.keyPress}
-                  error={this.state.lastNameError !== ''}
-                  helperText={this.state.lastNameError}
-                  onChange={event => this.setState({lastName: event.target.value})}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  id="userName"
-                  name="userName"
-                  label="Username"
-                  variant="outlined"
-                  autoComplete="uname"
-                  fullWidth
-                  required
-                  onKeyDown={this.keyPress}
-                  error={this.state.usernameError !== ''}
-                  helperText={this.state.usernameError}
-                  onChange={event => this.setState({username: event.target.value})}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  id="email"
-                  name="email"
-                  label="Email Address"
-                  variant="outlined"
-                  autoComplete="email"
-                  fullWidth
-                  required
-                  onKeyDown={this.keyPress}
-                  error={this.state.emailError !== ''}
-                  helperText={this.state.emailError}
-                  onChange={event => this.setState({email: event.target.value})}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  id="password"
-                  name="password"
-                  label="Password"
-                  type="password"
-                  variant="outlined"
-                  autoComplete="current-password"
-                  fullWidth
-                  required
-                  onKeyDown={this.keyPress}
-                  error={this.state.passwordError !== ''}
-                  helperText={this.state.passwordError}
-                  onChange={event => this.setState({password: event.target.value})}
-                />
-              </Grid>
-            </Grid>
-            <Button
-              fullWidth
-              variant="contained"
-              color="primary"
-              disabled={!this.ableToSubmit()}
-              className={classes.submit}
-              onClick={this.submit}
-            >
-              Sign Up
-            </Button>
-            <Grid container justify="flex-end">
-              <Grid item>
-                <Link href="/signin" variant="body2">
-                  Already have an account? Sign in
-                </Link>
-              </Grid>
-            </Grid>
-          </form>
-        </div>
-        <Box mt={5}>
-          <Copyright/>
-        </Box>
-      </Container>
+      <Grid textAlign='center' style={{height: '100vh'}} verticalAlign='middle'>
+        <Grid.Column style={{maxWidth: 450}}>
+          <Header as="h2" color="teal" textAlign="center">
+            <img src={logo} alt="logo" className="image"/>{" "}
+            Create a new account
+          </Header>
+          <Form size="large">
+            <Segment stacked>
+              <Form.Input
+                fluid
+                placeholder="First name"
+                onKeyDown={this.keyPress}
+                onChange={event => this.setState({firstName: event.target.value})}
+              />
+              <Form.Input
+                fluid
+                placeholder="Last name"
+                onKeyDown={this.keyPress}
+                onChange={event => this.setState({lastName: event.target.value})}
+              />
+              <Form.Input
+                fluid
+                icon="envelope"
+                iconPosition="left"
+                placeholder="Email"
+                onKeyDown={this.keyPress}
+                onChange={event => this.setState({email: event.target.value})}
+              />
+              <Form.Input
+                fluid
+                icon="user"
+                iconPosition="left"
+                placeholder="Username"
+                onKeyDown={this.keyPress}
+                onChange={event => this.setState({username: event.target.value})}
+              />
+              <Form.Input
+                fluid
+                icon="lock"
+                iconPosition="left"
+                placeholder="Password"
+                type="password"
+                onKeyDown={this.keyPress}
+                onChange={event => this.setState({password: event.target.value})}
+              />
+              <Button
+                color="teal"
+                fluid size="large"
+                disabled={!this.ableToSubmit()}
+                onClick={this.submit}
+              >
+                Sign in
+              </Button>
+            </Segment>
+          </Form>
+          <Message
+            error
+            header='Sign Up Unsuccessful'
+            list={this.state.errors}
+            hidden={this.state.errors.length === 0}
+          />
+          <Message>
+            New to us? <a href="/signin">Sign In</a>
+          </Message>
+        </Grid.Column>
+      </Grid>
     );
   }
 }
-
-export default withStyles(styles)(SignUp);
