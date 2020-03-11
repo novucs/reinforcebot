@@ -1,5 +1,5 @@
 import React from 'react';
-import {displayErrors} from '../Util';
+import {displayErrors, ensureSignedOut} from '../Util';
 import {Button, Form, Grid, Header, Message, Segment} from "semantic-ui-react";
 import logo from "../icon.svg";
 import TopMenu from "../TopMenu";
@@ -68,6 +68,8 @@ export default class SignUp extends React.Component {
   };
 
   render() {
+    ensureSignedOut();
+
     return (
       <div className='SitePage'>
         <TopMenu/>
@@ -133,7 +135,7 @@ export default class SignUp extends React.Component {
               hidden={this.state.errors.length === 0}
             />
             <Message>
-              New to us? <a href="/signin">Sign In</a>
+              Already have an account? <a href="/signin">Sign In</a>
             </Message>
           </Grid.Column>
         </Grid>

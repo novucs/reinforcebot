@@ -1,5 +1,5 @@
 import React from 'react';
-import displayError from '../Util';
+import displayError, {ensureSignedOut} from '../Util';
 import {Button, Form, Grid, Header, Message, Segment} from "semantic-ui-react";
 import logo from '../icon.svg'
 import TopMenu from "../TopMenu";
@@ -35,10 +35,10 @@ export default class SignIn extends React.Component {
       }
 
       this.setState({errors: []});
-      console.log("SignIn success");
       response.json().then(body => {
-        // window.localStorage.setItem('jwtAccess', body['access']);
-        // window.localStorage.setItem('jwtRefresh', body['refresh']);
+        window.localStorage.setItem('jwtAccess', body['access']);
+        window.localStorage.setItem('jwtRefresh', body['refresh']);
+        console.log("SignIn success");
       });
     });
   };
@@ -55,6 +55,8 @@ export default class SignIn extends React.Component {
   };
 
   render() {
+    ensureSignedOut();
+
     return (
       <div className='SitePage'>
         <TopMenu/>

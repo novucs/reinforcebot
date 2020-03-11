@@ -5,11 +5,13 @@ import Home from '../pages/Home';
 import SignUp from '../pages/SignUp';
 import SignIn from '../pages/SignIn';
 import Dashboard from "../pages/Dashboard";
+import Start from "../pages/Start";
 
 const Main = () => {
   return (
     <Switch>
       <Route exact path='/' component={Home}/>
+      <Route exact path='/start' component={Start}/>
       <Route exact path='/signup' component={SignUp}/>
       <Route exact path='/signin' component={SignIn}/>
       <Route exact path='/dashboard' component={Dashboard}/>
