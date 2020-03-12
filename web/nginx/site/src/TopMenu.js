@@ -25,7 +25,7 @@ export default class TopMenu extends Component {
 
         if (response.status !== 200) {
           response.text().then(body => {
-            console.error("Unexpected status code [", response.status, "] Response: ", body);
+            console.error("Unable to get personal details: ", body);
           });
           return;
         }

@@ -80,9 +80,9 @@ export function refreshJWT() {
       return;
     }
 
-    if (response.status < 200 || response.status >= 300) {
+    if (response.status !== 200) {
       response.json().then(body => {
-        console.error(body);
+        console.error("Unable to refresh JWT: ", body);
       });
       return;
     }
