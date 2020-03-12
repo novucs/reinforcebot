@@ -1,5 +1,5 @@
 import React from 'react';
-import {ensureSignedOut, signIn} from '../Util';
+import {ensureSignedIn, ensureSignedOut, signIn} from '../Util';
 import {Button, Form, Grid, Header, Message, Segment} from "semantic-ui-react";
 import logo from '../icon.svg'
 import TopMenu from "../TopMenu";
@@ -32,9 +32,11 @@ export default class SignIn extends React.Component {
       && this.state.password !== '';
   };
 
-  render() {
+  componentDidMount() {
     ensureSignedOut();
+  }
 
+  render() {
     return (
       <div className='SitePage'>
         <TopMenu/>

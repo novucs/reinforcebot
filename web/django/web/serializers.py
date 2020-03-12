@@ -11,5 +11,5 @@ UserCreateSerializer.Meta.fields += additional_user_fields
 class AgentSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Agent
-        fields = ('name', 'author')
+        fields = ('id', 'name', 'author')
         read_only_fields = ('author',)

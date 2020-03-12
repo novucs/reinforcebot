@@ -51,9 +51,11 @@ export default class TopMenu extends Component {
           <Menu.Item as='a' href='/'>
             Home
           </Menu.Item>
-          <Menu.Item as='a' href='/dashboard'>
-            Dashboard
-          </Menu.Item>
+          <div hidden={!hasJWT()}>
+            <Menu.Item as='a' href='/dashboard'>
+              Dashboard
+            </Menu.Item>
+          </div>
           <Menu.Item position='right'>
             <div hidden={hasJWT()}>
               <Button as='a' href='/signin'>

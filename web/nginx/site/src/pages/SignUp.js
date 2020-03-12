@@ -69,9 +69,11 @@ export default class SignUp extends React.Component {
       && this.state.password !== '';
   };
 
-  render() {
+  componentDidMount() {
     ensureSignedOut();
+  }
 
+  render() {
     return (
       <div className='SitePage'>
         <TopMenu/>

@@ -12,7 +12,7 @@ export default class HomepageLayout extends Component {
     return (
       <div className="SitePage">
         <TopMenu/>
-        <div className="SiteContents" style={{backgroundColor: '#F7F7F7'}}>
+        <div className="SiteContents">
           <Segment
             inverted
             textAlign='center'

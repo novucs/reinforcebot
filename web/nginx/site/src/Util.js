@@ -89,6 +89,7 @@ export function refreshJWT() {
 
     response.json().then(body => {
       window.localStorage.setItem('jwtAccess', body['access']);
+      window.location = '/dashboard';
     });
   });
 }
