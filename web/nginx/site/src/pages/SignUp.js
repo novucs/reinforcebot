@@ -34,7 +34,7 @@ export default class SignUp extends React.Component {
         password: this.state.password,
       }),
     }).then(response => {
-      if (response.status < 200 || response.status >= 300) {
+      if (response.status !== 201) {
         response.json().then(body => {
           this.setState({
             errors: displayErrors(
@@ -50,7 +50,7 @@ export default class SignUp extends React.Component {
 
       this.setState({errors: []});
       signIn(this.state.username, this.state.password, (errors) => {
-      this.setState({errors: errors});
+        this.setState({errors: errors});
       });
     });
   };

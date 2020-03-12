@@ -1,6 +1,6 @@
 import React, {Component} from "react";
 import {Button, Container, Dropdown, Icon, Menu} from "semantic-ui-react";
-import {BASE_URL, getJWT, hasJWT} from "./Util";
+import {BASE_URL, getJWT, hasJWT, refreshJWT} from "./Util";
 
 export default class TopMenu extends Component {
   constructor(props) {
@@ -24,8 +24,15 @@ export default class TopMenu extends Component {
           'Authorization': 'JWT ' + getJWT(),
         },
       }).then(response => {
-        if (response.status < 200 || response.status >= 300) {
-          this.signOut();
+        if (response.status === 401) {
+          refreshJWT(this.signOut);
+          return;
+        }
+
+        if (response.status !== 200) {
+          response.text().then(body => {
+            console.error("Unexpected status code [", response.status, "] Response: ", body);
+          });
           return;
         }
 

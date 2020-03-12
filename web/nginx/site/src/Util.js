@@ -43,7 +43,7 @@ export function signIn(username, password, callback) {
       password: password,
     }),
   }).then(response => {
-    if (response.status < 200 || response.status >= 300) {
+    if (response.status !== 200) {
       response.json().then(body => {
         callback(displayError(body['detail']));
       });
@@ -55,6 +55,28 @@ export function signIn(username, password, callback) {
       window.localStorage.setItem('jwtAccess', body['access']);
       window.localStorage.setItem('jwtRefresh', body['refresh']);
       window.location = '/dashboard';
+    });
+  });
+}
+
+export function refreshJWT(error) {
+  let token = window.localStorage.getItem('jwtRefresh');
+  fetch(BASE_URL + '/api/auth/jwt/refresh/', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({refresh: token}),
+  }).then(response => {
+    if (response.status < 200 || response.status >= 300) {
+      response.json().then(body => {
+        error();
+      });
+      return;
+    }
+    response.json().then(body => {
+      window.localStorage.setItem('jwtAccess', body['access']);
     });
   });
 }
