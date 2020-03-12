@@ -75,7 +75,7 @@ export default class SignUp extends React.Component {
     return (
       <div className='SitePage'>
         <TopMenu/>
-        <Grid textAlign='center' className='SiteContents' verticalAlign='middle'>
+        <Grid textAlign='center' style={{marginTop: '32px', marginBottom: '32px'}} className='SiteContents' verticalAlign='middle'>
           <Grid.Column style={{maxWidth: 450}}>
             <Header as="h2" color="teal" textAlign="center">
               <img src={logo} alt="logo" className="image"/>{" "}
