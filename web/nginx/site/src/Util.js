@@ -31,6 +31,12 @@ export function ensureSignedOut() {
   }
 }
 
+export function signOut() {
+  window.localStorage.setItem('jwtAccess', null);
+  window.localStorage.setItem('jwtRefresh', null);
+  window.location = '/signin';
+}
+
 export function signIn(username, password, callback) {
   fetch(BASE_URL + '/api/auth/jwt/create/', {
     method: 'POST',
@@ -59,7 +65,7 @@ export function signIn(username, password, callback) {
   });
 }
 
-export function refreshJWT(error) {
+export function refreshJWT() {
   let token = window.localStorage.getItem('jwtRefresh');
   fetch(BASE_URL + '/api/auth/jwt/refresh/', {
     method: 'POST',
@@ -69,12 +75,18 @@ export function refreshJWT(error) {
     },
     body: JSON.stringify({refresh: token}),
   }).then(response => {
+    if (response.status === 401) {
+      signOut();
+      return;
+    }
+
     if (response.status < 200 || response.status >= 300) {
       response.json().then(body => {
-        error();
+        console.error(body);
       });
       return;
     }
+
     response.json().then(body => {
       window.localStorage.setItem('jwtAccess', body['access']);
     });

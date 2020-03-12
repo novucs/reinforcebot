@@ -1,17 +1,11 @@
 import React, {Component} from "react";
 import {Button, Container, Dropdown, Icon, Menu} from "semantic-ui-react";
-import {BASE_URL, getJWT, hasJWT, refreshJWT} from "./Util";
+import {BASE_URL, getJWT, hasJWT, refreshJWT, signOut} from "./Util";
 
 export default class TopMenu extends Component {
   constructor(props) {
     super(props);
     this.state = {};
-  }
-
-  signOut() {
-    window.localStorage.setItem('jwtAccess', null);
-    window.localStorage.setItem('jwtRefresh', null);
-    window.location = '/signin';
   }
 
   componentDidMount() {
@@ -25,7 +19,7 @@ export default class TopMenu extends Component {
         },
       }).then(response => {
         if (response.status === 401) {
-          refreshJWT(this.signOut);
+          refreshJWT();
           return;
         }
 
@@ -87,7 +81,7 @@ export default class TopMenu extends Component {
                     ),
                     disabled: true,
                   },
-                  {key: 'sign-out', text: 'Sign Out', icon: 'sign out', onClick: this.signOut},
+                  {key: 'sign-out', text: 'Sign Out', icon: 'sign out', onClick: signOut},
                 ]}
               />
             </div>
