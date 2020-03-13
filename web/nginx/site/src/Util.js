@@ -140,3 +140,12 @@ export function fetchUsers(userURIs, callback) {
     });
   });
 }
+
+export function cropText(text, maxLength) {
+  let uncropped = text.split('\n')[0];
+  let cropped = uncropped.substring(0, maxLength);
+  if (uncropped.length > maxLength) {
+    return cropped + '...';
+  }
+  return cropped;
+}

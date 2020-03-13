@@ -32,63 +32,61 @@ export default class SignIn extends React.Component {
       && this.state.password !== '';
   };
 
-  componentDidMount() {
+  componentDidMount = () => {
     ensureSignedOut();
-  }
+  };
 
-  render() {
-    return (
-      <div className='SitePage'>
-        <TopMenu/>
-        <Grid textAlign='center' style={{marginTop: '32px', marginBottom: '32px'}} className='SiteContents'
-              verticalAlign='middle'>
-          <Grid.Column style={{maxWidth: 450}}>
-            <Header as="h2" color="teal" textAlign="center">
-              <img src={logo} alt="logo" className="image"/>{" "}
-              Sign-in to your account
-            </Header>
-            <Form size="large">
-              <Segment stacked>
-                <Form.Input
-                  fluid
-                  icon="user"
-                  iconPosition="left"
-                  placeholder="Username"
-                  onKeyDown={this.keyPress}
-                  onChange={event => this.setState({username: event.target.value})}
-                />
-                <Form.Input
-                  fluid
-                  icon="lock"
-                  iconPosition="left"
-                  placeholder="Password"
-                  type="password"
-                  onKeyDown={this.keyPress}
-                  onChange={event => this.setState({password: event.target.value})}
-                />
-                <Button
-                  color="teal"
-                  fluid size="large"
-                  disabled={!this.ableToSubmit()}
-                  onClick={this.submit}
-                >
-                  Sign in
-                </Button>
-              </Segment>
-            </Form>
-            <Message
-              error
-              header='Sign In Unsuccessful'
-              list={this.state.errors}
-              hidden={this.state.errors.length === 0}
-            />
-            <Message info>
-              New to us? <a href="/signup">Sign Up</a>
-            </Message>
-          </Grid.Column>
-        </Grid>
-        <Footer/>
-      </div>
-    );
-  }
+  render = () => (
+    <div className='SitePage'>
+      <TopMenu/>
+      <Grid textAlign='center' style={{marginTop: '32px', marginBottom: '32px'}} className='SiteContents'
+            verticalAlign='middle'>
+        <Grid.Column style={{maxWidth: 450}}>
+          <Header as="h2" color="teal" textAlign="center">
+            <img src={logo} alt="logo" className="image"/>{" "}
+            Sign-in to your account
+          </Header>
+          <Form size="large">
+            <Segment stacked>
+              <Form.Input
+                fluid
+                icon="user"
+                iconPosition="left"
+                placeholder="Username"
+                onKeyDown={this.keyPress}
+                onChange={event => this.setState({username: event.target.value})}
+              />
+              <Form.Input
+                fluid
+                icon="lock"
+                iconPosition="left"
+                placeholder="Password"
+                type="password"
+                onKeyDown={this.keyPress}
+                onChange={event => this.setState({password: event.target.value})}
+              />
+              <Button
+                color="teal"
+                fluid size="large"
+                disabled={!this.ableToSubmit()}
+                onClick={this.submit}
+              >
+                Sign in
+              </Button>
+            </Segment>
+          </Form>
+          <Message
+            error
+            header='Sign In Unsuccessful'
+            list={this.state.errors}
+            hidden={this.state.errors.length === 0}
+          />
+          <Message info>
+            New to us? <a href="/signup">Sign Up</a>
+          </Message>
+        </Grid.Column>
+      </Grid>
+      <Footer/>
+    </div>
+  );
 }

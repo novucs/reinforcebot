@@ -69,82 +69,81 @@ export default class SignUp extends React.Component {
       && this.state.password !== '';
   };
 
-  componentDidMount() {
+  componentDidMount = () => {
     ensureSignedOut();
-  }
+  };
 
-  render() {
-    return (
-      <div className='SitePage'>
-        <TopMenu/>
-        <Grid textAlign='center' style={{marginTop: '32px', marginBottom: '32px'}} className='SiteContents' verticalAlign='middle'>
-          <Grid.Column style={{maxWidth: 450}}>
-            <Header as="h2" color="teal" textAlign="center">
-              <img src={logo} alt="logo" className="image"/>{" "}
-              Create a new account
-            </Header>
-            <Form size="large">
-              <Segment stacked>
-                <Form.Input
-                  fluid
-                  placeholder="First name"
-                  onKeyDown={this.keyPress}
-                  onChange={event => this.setState({firstName: event.target.value})}
-                />
-                <Form.Input
-                  fluid
-                  placeholder="Last name"
-                  onKeyDown={this.keyPress}
-                  onChange={event => this.setState({lastName: event.target.value})}
-                />
-                <Form.Input
-                  fluid
-                  icon="envelope"
-                  iconPosition="left"
-                  placeholder="Email"
-                  onKeyDown={this.keyPress}
-                  onChange={event => this.setState({email: event.target.value})}
-                />
-                <Form.Input
-                  fluid
-                  icon="user"
-                  iconPosition="left"
-                  placeholder="Username"
-                  onKeyDown={this.keyPress}
-                  onChange={event => this.setState({username: event.target.value})}
-                />
-                <Form.Input
-                  fluid
-                  icon="lock"
-                  iconPosition="left"
-                  placeholder="Password"
-                  type="password"
-                  onKeyDown={this.keyPress}
-                  onChange={event => this.setState({password: event.target.value})}
-                />
-                <Button
-                  color="teal"
-                  fluid size="large"
-                  disabled={!this.ableToSubmit()}
-                  onClick={this.submit}
-                >
-                  Sign in
-                </Button>
-              </Segment>
-            </Form>
-            <Message
-              error
-              header='Sign Up Unsuccessful'
-              list={this.state.errors}
-              hidden={this.state.errors.length === 0}
-            />
-            <Message info>
-              Already have an account? <a href="/signin">Sign In</a>
-            </Message>
-          </Grid.Column>
-        </Grid>
-        <Footer/>
-      </div>
-    );
-  }
+  render = () => (
+    <div className='SitePage'>
+      <TopMenu/>
+      <Grid textAlign='center' style={{marginTop: '32px', marginBottom: '32px'}} className='SiteContents'
+            verticalAlign='middle'>
+        <Grid.Column style={{maxWidth: 450}}>
+          <Header as="h2" color="teal" textAlign="center">
+            <img src={logo} alt="logo" className="image"/>{" "}
+            Create a new account
+          </Header>
+          <Form size="large">
+            <Segment stacked>
+              <Form.Input
+                fluid
+                placeholder="First name"
+                onKeyDown={this.keyPress}
+                onChange={event => this.setState({firstName: event.target.value})}
+              />
+              <Form.Input
+                fluid
+                placeholder="Last name"
+                onKeyDown={this.keyPress}
+                onChange={event => this.setState({lastName: event.target.value})}
+              />
+              <Form.Input
+                fluid
+                icon="envelope"
+                iconPosition="left"
+                placeholder="Email"
+                onKeyDown={this.keyPress}
+                onChange={event => this.setState({email: event.target.value})}
+              />
+              <Form.Input
+                fluid
+                icon="user"
+                iconPosition="left"
+                placeholder="Username"
+                onKeyDown={this.keyPress}
+                onChange={event => this.setState({username: event.target.value})}
+              />
+              <Form.Input
+                fluid
+                icon="lock"
+                iconPosition="left"
+                placeholder="Password"
+                type="password"
+                onKeyDown={this.keyPress}
+                onChange={event => this.setState({password: event.target.value})}
+              />
+              <Button
+                color="teal"
+                fluid size="large"
+                disabled={!this.ableToSubmit()}
+                onClick={this.submit}
+              >
+                Sign in
+              </Button>
+            </Segment>
+          </Form>
+          <Message
+            error
+            header='Sign Up Unsuccessful'
+            list={this.state.errors}
+            hidden={this.state.errors.length === 0}
+          />
+          <Message info>
+            Already have an account? <a href="/signin">Sign In</a>
+          </Message>
+        </Grid.Column>
+      </Grid>
+      <Footer/>
+    </div>
+  );
 }

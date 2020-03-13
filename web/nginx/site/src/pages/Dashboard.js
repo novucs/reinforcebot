@@ -17,7 +17,7 @@ import {
   Segment
 } from "semantic-ui-react";
 import Footer from "../Footer";
-import {BASE_URL, displayErrors, ensureSignedIn, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
+import {BASE_URL, cropText, displayErrors, ensureSignedIn, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
 import _ from 'lodash'
 import logo from "../icon.svg";
 import {SemanticToastContainer, toast} from 'react-semantic-toasts';
@@ -58,7 +58,7 @@ export default class Dashboard extends React.Component {
     // }, 300);
   };
 
-  deleteAgent(id) {
+  deleteAgent = id => {
     if (hasJWT()) {
       fetch(BASE_URL + '/api/agents/' + id + '/', {
         method: 'DELETE',
@@ -84,9 +84,9 @@ export default class Dashboard extends React.Component {
         this.fetchAgents();
       });
     }
-  }
+  };
 
-  agentComponents() {
+  agentComponents = () => {
     let components = [];
     this.state.agents.forEach(agent => {
       if (!(agent.author in this.state.users)) {
@@ -104,7 +104,7 @@ export default class Dashboard extends React.Component {
             <br/>
             <span><h1>{agent.name}</h1></span>
             <br/>
-            <span>{agent.description}</span>
+            <span>{cropText(agent.description, 128)}</span>
             <br/>
             <Divider/>
             <Grid columns={2}>
@@ -140,9 +140,10 @@ export default class Dashboard extends React.Component {
       ));
     });
     return components;
-  }
+  };
 
-  agentFileChange(instance, input, event) {
+  // TODO: Cleanup
+  agentFileChange = (instance, input, event) => {
     let file = input.current.files[0];
     if (!file.name.endsWith('.tar.gz')) {
       toast(
@@ -155,9 +156,9 @@ export default class Dashboard extends React.Component {
       return;
     }
     instance.setState({agentParametersFileUpload: file});
-  }
+  };
 
-  closeAgentCreation() {
+  closeAgentCreation = () => {
     this.setState({
       creatingAgent: false,
       createAgentName: '',
@@ -165,9 +166,9 @@ export default class Dashboard extends React.Component {
       agentParametersFileUpload: null,
       createAgentErrors: [],
     });
-  }
+  };
 
-  createAgent() {
+  createAgent = () => {
     let data = new FormData();
     data.append('name', this.state.createAgentName);
     data.append('description', this.state.createAgentDescription);
@@ -203,9 +204,9 @@ export default class Dashboard extends React.Component {
 
       this.fetchAgents();
     });
-  }
+  };
 
-  unableToCreateAgentReasons() {
+  unableToCreateAgentReasons = () => {
     let reasons = [];
     if (this.state.createAgentName === '') {
       reasons.push((<List.Item key='1'>The agent must have a name</List.Item>));
@@ -220,14 +221,14 @@ export default class Dashboard extends React.Component {
     }
 
     return reasons;
-  }
+  };
 
-  componentDidMount() {
+  componentDidMount = () => {
     ensureSignedIn();
     this.fetchAgents();
-  }
+  };
 
-  fetchAgents() {
+  fetchAgents = () => {
     if (!hasJWT()) {
       return;
     }
@@ -242,7 +243,6 @@ export default class Dashboard extends React.Component {
     }).then(response => {
       if (response.status === 401) {
         refreshJWT();
-        // todo: refresh on success?
         return;
       }
 
@@ -264,107 +264,104 @@ export default class Dashboard extends React.Component {
         });
       });
     });
-  }
+  };
 
-  render() {
-    return (
-      <div className="SitePage">
-        <TopMenu/>
-        <SemanticToastContainer position='bottom-right'/>
-        <Container className="SiteContents" style={{marginTop: '80px'}}>
-          <Header as="h2" color="teal" textAlign="center">
-            <img src={logo} alt="logo" className="image"/>{" "}
-            Agents
-          </Header>
-          <Divider/>
-          <Segment basic textAlign='center'>
-            <Grid columns={2} relaxed='very'>
-              <Grid.Column>
-                <Search
-                  placeholder='Search agents'
-                  loading={this.state.isLoading}
-                  onResultSelect={this.handleResultSelect}
-                  onSearchChange={_.debounce(this.handleSearchChange, 500, {
-                    leading: true,
-                  })}
-                  results={this.state.results}
-                  value={this.state.value}
-                />
-              </Grid.Column>
-              <Grid.Column>
-                <Modal open={this.state.creatingAgent}
-                       trigger={
-                         <Button icon positive onClick={() =>
-                           this.setState({creatingAgent: true})
-                         }>
-                           <Icon name='plus'/>{} Create a new agent
-                         </Button>
-                       }
-                       basic
-                       size='small'>
-                  <Header icon='add square' content='Create Agent'/>
-                  <Modal.Content>
-                    <p>Create an agent to backup on our cloud service.</p>
-                    <Form.Input
-                      fluid
-                      required
-                      icon="tag"
-                      iconPosition="left"
-                      placeholder="Name"
-                      onKeyDown={this.keyPress}
-                      onChange={event => this.setState({createAgentName: event.target.value})}
-                    />
-                    <p/>
-                    <Form.Input
-                      fluid
-                      required
-                      icon="pencil"
-                      iconPosition="left"
-                      placeholder="Description"
-                      onKeyDown={this.keyPress}
-                      onChange={event => this.setState({createAgentDescription: event.target.value})}
-                    />
-                    <p/>
-                    <Popup
-                      flowing
-                      position='right center'
-                      trigger={
-                        <Button
-                          content={this.state.agentParametersFileUpload === null ? "Choose File" : this.state.agentParametersFileUpload.name}
-                          labelPosition="left"
-                          icon="file"
-                          color='green'
-                          onClick={() => this.fileInputRef.current.click()}
-                        />
-                      }>
-                      Find your agent parameter files
-                      under: <br/><code>/home/&lt;username&gt;/.agents/&lt;name&gt;-&lt;timestamp&gt;.tar.gz</code>
-                    </Popup>
-                    <input
-                      ref={this.fileInputRef}
-                      type="file"
-                      hidden
-                      onChange={(event) => {
-                        this.agentFileChange(this, this.fileInputRef, event);
-                      }}
-                    />
-                    <Message
-                      error
-                      header='Cannot create agent'
-                      list={this.state.createAgentErrors}
-                      hidden={this.state.createAgentErrors.length === 0}
-                    />
-                  </Modal.Content>
-                  <Modal.Actions>
-                    <Button basic color='red' inverted onClick={() => this.closeAgentCreation()}>
-                      <Icon name='remove'/> Cancel
-                    </Button>
-                    <Popup
-                      flowing
-                      position='bottom right'
-                      disabled={this.unableToCreateAgentReasons().length === 0}
-                      trigger={
-                        <span>
+  render = () => (
+    <div className="SitePage">
+      <TopMenu/>
+      <SemanticToastContainer position='bottom-right'/>
+      <Container className="SiteContents" style={{marginTop: '80px'}}>
+        <Header as="h2" color="teal" textAlign="center">
+          <img src={logo} alt="logo" className="image"/>{" "}
+          Agents
+        </Header>
+        <Divider/>
+        <Segment basic textAlign='center'>
+          <Grid columns={2} relaxed='very'>
+            <Grid.Column>
+              <Search
+                placeholder='Search agents'
+                loading={this.state.isLoading}
+                onResultSelect={this.handleResultSelect}
+                onSearchChange={_.debounce(this.handleSearchChange, 500, {
+                  leading: true,
+                })}
+                results={this.state.results}
+                value={this.state.value}
+              />
+            </Grid.Column>
+            <Grid.Column>
+              <Modal open={this.state.creatingAgent}
+                     trigger={
+                       <Button icon positive onClick={() =>
+                         this.setState({creatingAgent: true})
+                       }>
+                         <Icon name='plus'/>{} Create a new agent
+                       </Button>
+                     }
+                     basic
+                     size='small'>
+                <Header icon='add square' content='Create Agent'/>
+                <Modal.Content>
+                  <p>Create an agent to backup on our cloud service.</p>
+                  <Form.Input
+                    fluid
+                    required
+                    icon="tag"
+                    iconPosition="left"
+                    placeholder="Name"
+                    onChange={event => this.setState({createAgentName: event.target.value})}
+                  />
+                  <p/>
+                  <Form.Input
+                    fluid
+                    required
+                    icon="pencil"
+                    iconPosition="left"
+                    placeholder="Description"
+                    onChange={event => this.setState({createAgentDescription: event.target.value})}
+                  />
+                  <p/>
+                  <Popup
+                    flowing
+                    position='right center'
+                    trigger={
+                      <Button
+                        content={this.state.agentParametersFileUpload === null ? "Choose File" : this.state.agentParametersFileUpload.name}
+                        labelPosition="left"
+                        icon="file"
+                        color='green'
+                        onClick={() => this.fileInputRef.current.click()}
+                      />
+                    }>
+                    Find your agent parameter files
+                    under: <br/><code>/home/&lt;username&gt;/.agents/&lt;name&gt;-&lt;timestamp&gt;.tar.gz</code>
+                  </Popup>
+                  <input
+                    ref={this.fileInputRef}
+                    type="file"
+                    hidden
+                    onChange={(event) => {
+                      this.agentFileChange(this, this.fileInputRef, event);
+                    }}
+                  />
+                  <Message
+                    error
+                    header='Cannot create agent'
+                    list={this.state.createAgentErrors}
+                    hidden={this.state.createAgentErrors.length === 0}
+                  />
+                </Modal.Content>
+                <Modal.Actions>
+                  <Button basic color='red' inverted onClick={() => this.closeAgentCreation()}>
+                    <Icon name='remove'/> Cancel
+                  </Button>
+                  <Popup
+                    flowing
+                    position='bottom right'
+                    disabled={this.unableToCreateAgentReasons().length === 0}
+                    trigger={
+                      <span>
                           <Button
                             color='green'
                             inverted
@@ -374,23 +371,22 @@ export default class Dashboard extends React.Component {
                             <Icon name='checkmark'/> Create
                           </Button>
                         </span>
-                      }>
-                      <List bulleted>
-                        {this.unableToCreateAgentReasons()}
-                      </List>
-                    </Popup>
-                  </Modal.Actions>
-                </Modal>
-              </Grid.Column>
-            </Grid>
-            <Divider vertical>Or</Divider>
-          </Segment>
-          <Grid style={{marginTop: '16px', marginBottom: '16px'}}>
-            {this.agentComponents()}
+                    }>
+                    <List bulleted>
+                      {this.unableToCreateAgentReasons()}
+                    </List>
+                  </Popup>
+                </Modal.Actions>
+              </Modal>
+            </Grid.Column>
           </Grid>
-        </Container>
-        < Footer/>
-      </div>
-    );
-  }
+          <Divider vertical>Or</Divider>
+        </Segment>
+        <Grid style={{marginTop: '16px', marginBottom: '16px'}}>
+          {this.agentComponents()}
+        </Grid>
+      </Container>
+      < Footer/>
+    </div>
+  );
 }
