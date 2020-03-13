@@ -21,7 +21,6 @@ import {BASE_URL, displayErrors, ensureSignedIn, getJWT, hasJWT, refreshJWT} fro
 import _ from 'lodash'
 import logo from "../icon.svg";
 import {SemanticToastContainer, toast} from 'react-semantic-toasts';
-import download from "../clientbinary";
 
 // const initialState = {isLoading: false, results: [], value: ''};
 // const source = ["blue", "red", "green"];
@@ -33,11 +32,10 @@ export default class Dashboard extends React.Component {
       creatingAgent: false,
       createAgentName: '',
       createAgentDescription: '',
-      createAgentErrors: [
-        // 'Agent already exists',
-      ],
+      createAgentErrors: [],
       agents: [],
       agentParametersFileUpload: null,
+      users: {},
     };
     this.fileInputRef = React.createRef();
   }
@@ -91,32 +89,52 @@ export default class Dashboard extends React.Component {
   agentComponents() {
     let components = [];
     this.state.agents.forEach(agent => {
+      if (!(agent.author in this.state.users)) {
+        return;
+      }
+
+      let author = this.state.users[agent.author];
+
       components.push((
-        <Grid.Column key={agent['id']} className='eight wide'>
+        <Grid.Column key={agent.id} className='sixteen wide'>
           <Segment textAlign='left'>
             <Label color='green' ribbon>
-              Author
+              Created by {author.username} ({author.first_name} {author.last_name})
             </Label>
             <br/>
-            {/*<span><h1>Agent #{agent['id']}</h1></span>*/}
-            <span><h1>{agent['name']}</h1></span>
+            <span><h1>{agent.name}</h1></span>
             <br/>
-            <span>{agent['author']}</span>
-            <Button
-              primary
-              download
-              href={agent['parameters']}
-              icon='cloud download'
-              content='Download'
-              size='medium'
-            />
-            <div style={{textAlign: 'right'}}>
-              <Button size='tiny' icon onClick={() => {
-                this.deleteAgent(agent['id'])
-              }} color='red'>
-                <Icon name='cancel'/>
-              </Button>
-            </div>
+            <span>{agent.description}</span>
+            <br/>
+            <Divider/>
+            <Grid columns={2}>
+              <Grid.Column>
+                <Button
+                  primary
+                  download
+                  href={agent.parameters}
+                  icon='cloud download'
+                  content='Download'
+                  size='medium'
+                />
+                <Button
+                  color='orange'
+                  href={'/dashboard/agent/' + agent.id}
+                  icon='bars'
+                  content='Details'
+                  size='medium'
+                />
+              </Grid.Column>
+              <Grid.Column>
+                <div style={{textAlign: 'right'}}>
+                  <Button icon onClick={() => {
+                    this.deleteAgent(agent.id)
+                  }} color='red'>
+                    <Icon name='cancel'/>
+                  </Button>
+                </div>
+              </Grid.Column>
+            </Grid>
           </Segment>
         </Grid.Column>
       ));
@@ -164,8 +182,6 @@ export default class Dashboard extends React.Component {
       method: 'POST',
       body: data,
     }).then((response) => {
-      console.log(response);
-
       if (response.status !== 201) {
         response.json().then(body => {
           this.setState({
@@ -212,8 +228,52 @@ export default class Dashboard extends React.Component {
   }
 
   fetchAgents() {
-    if (hasJWT()) {
-      fetch(BASE_URL + '/api/agents/', {
+    if (!hasJWT()) {
+      return;
+    }
+
+    fetch(BASE_URL + '/api/agents/', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'JWT ' + getJWT(),
+      },
+    }).then(response => {
+      if (response.status === 401) {
+        refreshJWT();
+        // todo: refresh on success?
+        return;
+      }
+
+      if (response.status !== 200) {
+        response.text().then(body => {
+          console.error("Unable to fetch agents: ", body);
+        });
+        return;
+      }
+
+      response.json().then(body => {
+        this.setState({agents: body});
+        this.fetchUsers();
+      });
+    });
+  }
+
+  fetchUsers() {
+    if (!hasJWT()) {
+      return;
+    }
+
+    let userURIs = new Set();
+    this.state.agents.forEach(agent => {
+      userURIs.add(agent['author']);
+    });
+
+    let users = {};
+
+    userURIs.forEach(userURI => {
+      fetch(userURI, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -229,16 +289,17 @@ export default class Dashboard extends React.Component {
 
         if (response.status !== 200) {
           response.text().then(body => {
-            console.error("Unable to fetch agents: ", body);
+            console.error("Unable to fetch user (" + userURI + "): ", body);
           });
           return;
         }
 
         response.json().then(body => {
-          this.setState({agents: body});
+          users[userURI] = body;
+          this.setState({users: users});
         });
       });
-    }
+    });
   }
 
   render() {
