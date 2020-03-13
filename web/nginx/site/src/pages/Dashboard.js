@@ -17,7 +17,17 @@ import {
   Segment
 } from "semantic-ui-react";
 import Footer from "../Footer";
-import {BASE_URL, cropText, displayErrors, ensureSignedIn, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
+import {
+  BASE_URL,
+  cropText,
+  deleteAgent,
+  displayErrors,
+  ensureSignedIn,
+  fetchUsers,
+  getJWT,
+  hasJWT,
+  refreshJWT
+} from "../Util";
 import _ from 'lodash'
 import logo from "../icon.svg";
 import {SemanticToastContainer, toast} from 'react-semantic-toasts';
@@ -36,6 +46,8 @@ export default class Dashboard extends React.Component {
       agents: [],
       agentParametersFileUpload: null,
       users: {},
+      deleting: false,
+      deletingAgent: null,
     };
     this.fileInputRef = React.createRef();
   }
@@ -56,34 +68,6 @@ export default class Dashboard extends React.Component {
     //     results: _.filter(source, isMatch),
     //   })
     // }, 300);
-  };
-
-  deleteAgent = id => {
-    if (hasJWT()) {
-      fetch(BASE_URL + '/api/agents/' + id + '/', {
-        method: 'DELETE',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': 'JWT ' + getJWT(),
-        },
-      }).then(response => {
-        if (response.status === 401) {
-          refreshJWT();
-          // todo: refresh on success?
-          return;
-        }
-
-        if (response.status !== 204) {
-          response.text().then(body => {
-            console.error("Unable to delete agent: ", response);
-          });
-          return;
-        }
-
-        this.fetchAgents();
-      });
-    }
   };
 
   agentComponents = () => {
@@ -127,11 +111,7 @@ export default class Dashboard extends React.Component {
               </Grid.Column>
               <Grid.Column>
                 <div style={{textAlign: 'right'}}>
-                  <Button icon onClick={() => {
-                    this.deleteAgent(agent.id)
-                  }} color='red'>
-                    <Icon name='cancel'/>
-                  </Button>
+                  {this.deleteAgentModal(agent)}
                 </div>
               </Grid.Column>
             </Grid>
@@ -142,8 +122,7 @@ export default class Dashboard extends React.Component {
     return components;
   };
 
-  // TODO: Cleanup
-  agentFileChange = (instance, input, event) => {
+  agentFileChange = (input) => {
     let file = input.current.files[0];
     if (!file.name.endsWith('.tar.gz')) {
       toast(
@@ -155,7 +134,7 @@ export default class Dashboard extends React.Component {
       );
       return;
     }
-    instance.setState({agentParametersFileUpload: file});
+    this.setState({agentParametersFileUpload: file});
   };
 
   closeAgentCreation = () => {
@@ -173,17 +152,22 @@ export default class Dashboard extends React.Component {
     data.append('name', this.state.createAgentName);
     data.append('description', this.state.createAgentDescription);
     data.append('parameters', this.state.agentParametersFileUpload);
+    data.append('changeReason', 'Initial creation');
 
     fetch(BASE_URL + '/api/agents/', {
+      method: 'POST',
       headers: {
-        // 'Accept': 'application/json',
-        // 'Content-Type': 'application/json',
         'Authorization': 'JWT ' + getJWT(),
       },
-      method: 'POST',
       body: data,
     }).then((response) => {
+      if (response.status === 401) {
+        refreshJWT();
+        return;
+      }
+
       if (response.status !== 201) {
+        console.error('Failed to create an agent: ', response);
         response.json().then(body => {
           this.setState({
             createAgentErrors: displayErrors(body['name'], body['description'])
@@ -266,6 +250,36 @@ export default class Dashboard extends React.Component {
     });
   };
 
+  deleteAgentModal = (agent) => (
+    <Modal open={this.state.deleting}
+           trigger={
+             <Button icon onClick={() => {
+               this.setState({deleting: true})
+             }} color='red'>
+               <Icon name='cancel'/>
+             </Button>
+           }
+           basic
+           size='small'>
+      <Header icon='cancel' content='Delete Agent'/>
+      <Modal.Content>
+        <b>Warning:</b> Deleting the agent <b>"{agent.name}"</b>, are you sure you want to do this?
+      </Modal.Content>
+      <Modal.Actions>
+        <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
+          Cancel
+        </Button>
+        <Button
+          color='red'
+          inverted
+          onClick={() => deleteAgent(agent.id, () => window.location = '/dashboard')}
+        >
+          Delete
+        </Button>
+      </Modal.Actions>
+    </Modal>
+  );
+
   render = () => (
     <div className="SitePage">
       <TopMenu/>
@@ -342,7 +356,7 @@ export default class Dashboard extends React.Component {
                     type="file"
                     hidden
                     onChange={(event) => {
-                      this.agentFileChange(this, this.fileInputRef, event);
+                      this.agentFileChange(this.fileInputRef);
                     }}
                   />
                   <Message
@@ -353,7 +367,7 @@ export default class Dashboard extends React.Component {
                   />
                 </Modal.Content>
                 <Modal.Actions>
-                  <Button basic color='red' inverted onClick={() => this.closeAgentCreation()}>
+                  <Button basic color='grey' inverted onClick={() => this.closeAgentCreation()}>
                     <Icon name='remove'/> Cancel
                   </Button>
                   <Popup

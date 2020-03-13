@@ -1,5 +1,6 @@
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
+from simple_history.utils import update_change_reason
 
 from web.models import Agent
 
@@ -18,8 +19,22 @@ class HistoricalRecordField(serializers.ListField):
 class AgentSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Agent
-        fields = ('id', 'name', 'description', 'parameters', 'author')
+        fields = ('id', 'name', 'description', 'parameters', 'author', 'changeReason')
         read_only_fields = ('author',)
+
+    changeReason = serializers.CharField(write_only=True)
+
+    def create(self, validated_data):
+        change_reason = validated_data.pop('changeReason', None)
+        instance = super(AgentSerializer, self).create(validated_data)
+        update_change_reason(instance, change_reason)
+        return instance
+
+    def update(self, instance, validated_data):
+        change_reason = validated_data.pop('changeReason', None)
+        instance = super(AgentSerializer, self).update(instance, validated_data)
+        update_change_reason(instance, change_reason)
+        return instance
 
 
 class AgentRetrieveSerializer(serializers.HyperlinkedModelSerializer):

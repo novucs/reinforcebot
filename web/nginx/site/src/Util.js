@@ -141,6 +141,33 @@ export function fetchUsers(userURIs, callback) {
   });
 }
 
+export function deleteAgent(id, callback) {
+  if (hasJWT()) {
+    fetch(BASE_URL + '/api/agents/' + id + '/', {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'JWT ' + getJWT(),
+      },
+    }).then(response => {
+      if (response.status === 401) {
+        refreshJWT();
+        return;
+      }
+
+      if (response.status !== 204) {
+        response.text().then(body => {
+          console.error("Unable to delete agent: ", response);
+        });
+        return;
+      }
+
+      callback();
+    });
+  }
+}
+
 export function cropText(text, maxLength) {
   let uncropped = text.split('\n')[0];
   let cropped = uncropped.substring(0, maxLength);

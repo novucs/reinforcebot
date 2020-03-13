@@ -13,11 +13,13 @@ import {
   Loader,
   Modal,
   Pagination,
-  Segment
+  Popup,
+  Segment,
+  Table
 } from "semantic-ui-react";
 import Footer from "../Footer";
 import logo from "../icon.svg";
-import {BASE_URL, ensureSignedIn, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
+import {BASE_URL, deleteAgent, ensureSignedIn, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
 import Moment from 'moment';
 import {SemanticToastContainer, toast} from "react-semantic-toasts";
 
@@ -33,8 +35,11 @@ export default class AgentDetail extends Component {
       editingName: false,
       editingDescription: false,
       updatingModal: false,
+      agentParametersFileUpload: null,
       deleting: false,
+      deleteValue: false,
     };
+    this.fileInputRef = React.createRef();
   }
 
   componentDidMount = () => {
@@ -102,11 +107,26 @@ export default class AgentDetail extends Component {
       let user = this.state.users[item.history_user_id];
       Moment.locale('en');
       history.push((
-        <List.Item key={'history-' + item.history_id}>
-          <a download href={BASE_URL + '/api/media/' + item.parameters}>
-            {Moment(item.history_date).format('LLLL') + ' authored by ' + user.username}
-          </a>
-        </List.Item>
+        <Table.Row>
+          <Table.Cell>
+            <a download href={BASE_URL + '/api/media/' + item.parameters}>
+              <Icon name='cloud download'/>
+            </a>
+          </Table.Cell>
+          <Table.Cell>
+            {user.username}
+          </Table.Cell>
+          <Table.Cell>{item.history_change_reason}</Table.Cell>
+          <Table.Cell>
+            <Popup
+              inverted
+              hoverable
+              position='bottom center'
+              content={Moment(item.history_date).format('LLLL')}
+              trigger={<span>{Moment(item.history_date).fromNow()}</span>}
+            />
+          </Table.Cell>
+        </Table.Row>
       ));
     }
 
@@ -120,7 +140,9 @@ export default class AgentDetail extends Component {
       editingName: false,
       editingDescription: false,
       updatingModal: false,
+      agentParametersFileUpload: null,
       deleting: false,
+      deleteValue: false,
     });
   };
 
@@ -131,6 +153,7 @@ export default class AgentDetail extends Component {
 
     let body = {};
     body[fieldName] = this.state.agent[fieldName];
+    body['changeReason'] = 'Updated ' + fieldName;
 
     fetch(BASE_URL + '/api/agents/' + this.state.agent.id + '/', {
       method: 'PATCH',
@@ -173,7 +196,6 @@ export default class AgentDetail extends Component {
                style={{marginTop: '5px'}}
                icon='tag'
                content='Edit Name'
-               onKeyDown={() => this.editAgent('name')}
                onClick={() => this.setState({editingName: true})}
              />
            }
@@ -194,7 +216,7 @@ export default class AgentDetail extends Component {
         />
       </Modal.Content>
       <Modal.Actions>
-        <Button basic color='red' inverted onClick={() => this.closeEditWindow()}>
+        <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
           <Icon name='remove'/> Cancel
         </Button>
         <Button
@@ -217,7 +239,6 @@ export default class AgentDetail extends Component {
                style={{marginTop: '5px'}}
                icon='pencil'
                content='Edit Description'
-               onKeyDown={() => this.editAgent('description')}
                onClick={() => this.setState({editingDescription: true})}
              />
            }
@@ -237,7 +258,7 @@ export default class AgentDetail extends Component {
         />
       </Modal.Content>
       <Modal.Actions>
-        <Button basic color='red' inverted onClick={() => this.closeEditWindow()}>
+        <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
           <Icon name='remove'/> Cancel
         </Button>
         <Button
@@ -247,6 +268,150 @@ export default class AgentDetail extends Component {
           onClick={() => this.editAgent('description')}
         >
           <Icon name='checkmark'/> Submit
+        </Button>
+      </Modal.Actions>
+    </Modal>
+  );
+
+  updateParameters = () => {
+    if (!hasJWT() || this.state.agentParametersFileUpload === null) {
+      return;
+    }
+
+    let data = new FormData();
+    data.append('parameters', this.state.agentParametersFileUpload);
+    data.append('changeReason', 'Updated parameters');
+
+    fetch(BASE_URL + '/api/agents/' + this.state.agent.id + '/', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'JWT ' + getJWT(),
+      },
+      body: data,
+    }).then(response => {
+      if (response.status === 401) {
+        refreshJWT();
+        return;
+      }
+
+      if (response.status !== 200) {
+        response.text().then(body => {
+          console.error("Unable to update agent: ", body);
+        });
+        return;
+      }
+
+      toast(
+        {
+          type: 'success',
+          title: 'Success',
+          description: <p>Agent successfully updated</p>
+        },
+      );
+      this.closeEditWindow();
+      this.fetchAgent();
+    });
+  };
+
+  agentFileChange = (input) => {
+    let file = input.current.files[0];
+    if (!file.name.endsWith('.tar.gz')) {
+      toast(
+        {
+          type: 'error',
+          title: 'Bad file',
+          description: <p>You must select a valid agent file</p>
+        },
+      );
+      return;
+    }
+    this.setState({agentParametersFileUpload: file});
+  };
+
+  updateParametersModal = () => (
+    <Modal open={this.state.updatingModal}
+           trigger={
+             <Button
+               fluid
+               style={{marginTop: '5px'}}
+               color='yellow'
+               icon='cog'
+               content='Update Model'
+               onClick={() => this.setState({updatingModal: true})}
+             />
+           }
+           basic
+           size='small'>
+      <Header icon='upload' content='Update Agent Modal'/>
+      <Modal.Content>
+        <Popup
+          flowing
+          position='right center'
+          trigger={
+            <Button
+              content={this.state.agentParametersFileUpload === null ? "Choose File" : this.state.agentParametersFileUpload.name}
+              labelPosition="left"
+              icon="file"
+              color='green'
+              onClick={() => this.fileInputRef.current.click()}
+            />
+          }>
+          Find your agent parameter files
+          under: <br/><code>/home/&lt;username&gt;/.agents/&lt;name&gt;-&lt;timestamp&gt;.tar.gz</code>
+        </Popup>
+        <input
+          ref={this.fileInputRef}
+          type="file"
+          hidden
+          onChange={(event) => {
+            this.agentFileChange(this.fileInputRef);
+          }}
+        />
+      </Modal.Content>
+      <Modal.Actions>
+        <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
+          <Icon name='remove'/> Cancel
+        </Button>
+        <Button
+          color='green'
+          inverted
+          disabled={this.state.agentParametersFileUpload === null}
+          onClick={() => this.updateParameters()}
+        >
+          <Icon name='checkmark'/> Upload
+        </Button>
+      </Modal.Actions>
+    </Modal>
+  );
+
+  deleteAgentModal = () => (
+    <Modal open={this.state.deleting}
+           trigger={
+             <Button
+               fluid
+               style={{marginTop: '5px'}}
+               color='red'
+               icon='cancel'
+               content='Delete'
+               onClick={() => this.setState({deleting: true})}
+             />
+           }
+           basic
+           size='small'>
+      <Header icon='cancel' content='Delete Agent'/>
+      <Modal.Content>
+        <b>Warning:</b> Deleting the agent <b>"{this.state.agent.name}"</b>, are you sure you want to do this?
+      </Modal.Content>
+      <Modal.Actions>
+        <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
+          Cancel
+        </Button>
+        <Button
+          color='red'
+          inverted
+          onClick={() => deleteAgent(this.state.agent.id, () => window.location = '/dashboard')}
+        >
+          Delete
         </Button>
       </Modal.Actions>
     </Modal>
@@ -282,15 +447,21 @@ export default class AgentDetail extends Component {
               {key: 'Agent', content: 'Agent', active: true},
             ]}/>
             <Divider/>
-            <List>
+            <List className='large text'>
               {this.descriptionLines()}
             </List>
           </Segment>
-          <Divider>History</Divider>
           <div style={{textAlign: 'left'}}>
-            <List>
-              {this.agentHistory()}
-            </List>
+            <Table celled striped>
+              <Table.Header>
+                <Table.Row>
+                  <Table.HeaderCell colSpan='4'>History</Table.HeaderCell>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                {this.agentHistory()}
+              </Table.Body>
+            </Table>
             <Grid>
               <Grid.Column textAlign='center'>
                 <Pagination
@@ -316,20 +487,8 @@ export default class AgentDetail extends Component {
             />
             {this.editNameModal()}
             {this.editDescriptionModal()}
-            <Button
-              fluid
-              style={{marginTop: '5px'}}
-              color='yellow'
-              icon='cog'
-              content='Update Model'
-            />
-            <Button
-              fluid
-              style={{marginTop: '5px'}}
-              color='red'
-              icon='cancel'
-              content='Delete'
-            />
+            {this.updateParametersModal()}
+            {this.deleteAgentModal()}
           </Segment>
         </Grid.Column>
       </Grid>
