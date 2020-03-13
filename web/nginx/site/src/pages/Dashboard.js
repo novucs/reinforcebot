@@ -17,7 +17,7 @@ import {
   Segment
 } from "semantic-ui-react";
 import Footer from "../Footer";
-import {BASE_URL, displayErrors, ensureSignedIn, getJWT, hasJWT, refreshJWT} from "../Util";
+import {BASE_URL, displayErrors, ensureSignedIn, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
 import _ from 'lodash'
 import logo from "../icon.svg";
 import {SemanticToastContainer, toast} from 'react-semantic-toasts';
@@ -119,7 +119,7 @@ export default class Dashboard extends React.Component {
                 />
                 <Button
                   color='orange'
-                  href={'/dashboard/agent/' + agent.id}
+                  href={'/agent/' + agent.id}
                   icon='bars'
                   content='Details'
                   size='medium'
@@ -255,48 +255,12 @@ export default class Dashboard extends React.Component {
 
       response.json().then(body => {
         this.setState({agents: body});
-        this.fetchUsers();
-      });
-    });
-  }
-
-  fetchUsers() {
-    if (!hasJWT()) {
-      return;
-    }
-
-    let userURIs = new Set();
-    this.state.agents.forEach(agent => {
-      userURIs.add(agent['author']);
-    });
-
-    let users = {};
-
-    userURIs.forEach(userURI => {
-      fetch(userURI, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': 'JWT ' + getJWT(),
-        },
-      }).then(response => {
-        if (response.status === 401) {
-          refreshJWT();
-          // todo: refresh on success?
-          return;
-        }
-
-        if (response.status !== 200) {
-          response.text().then(body => {
-            console.error("Unable to fetch user (" + userURI + "): ", body);
-          });
-          return;
-        }
-
-        response.json().then(body => {
-          users[userURI] = body;
-          this.setState({users: users});
+        let userURIs = new Set();
+        this.state.agents.forEach(agent => {
+          userURIs.add(agent['author']);
+        });
+        fetchUsers(userURIs, users => {
+          this.setState({users: users})
         });
       });
     });

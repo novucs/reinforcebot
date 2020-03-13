@@ -1,10 +1,9 @@
 from rest_framework import viewsets
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 
 from web.models import Agent
-from web.serializers import AgentSerializer
+from web.serializers import AgentSerializer, AgentRetrieveSerializer
 
 
 class AgentViewSet(viewsets.ModelViewSet):
@@ -21,10 +20,7 @@ class AgentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=serializer.context['request'].user)
 
-    def retrieve(self, request, *args, **kwargs):
-        print(args)
-        print(kwargs)
-        print('hello?')
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+    def get_serializer_class(self, *args, **kwargs):
+        if self.action == 'retrieve':
+            return AgentRetrieveSerializer
+        return super(AgentViewSet, self).get_serializer_class()

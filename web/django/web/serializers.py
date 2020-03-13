@@ -8,8 +8,24 @@ UserSerializer.Meta.fields += additional_user_fields
 UserCreateSerializer.Meta.fields += additional_user_fields
 
 
+class HistoricalRecordField(serializers.ListField):
+    child = serializers.DictField()
+
+    def to_representation(self, data):
+        return super().to_representation(data.values())
+
+
 class AgentSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Agent
         fields = ('id', 'name', 'description', 'parameters', 'author')
         read_only_fields = ('author',)
+
+
+class AgentRetrieveSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Agent
+        fields = ('id', 'name', 'description', 'parameters', 'author', 'history')
+        read_only_fields = ('author', 'history',)
+
+    history = HistoricalRecordField(read_only=True)

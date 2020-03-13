@@ -81,6 +81,7 @@ export function refreshJWT() {
     }
 
     if (response.status !== 200) {
+      signOut();
       response.json().then(body => {
         console.error("Unable to refresh JWT: ", body);
       });
@@ -89,7 +90,53 @@ export function refreshJWT() {
 
     response.json().then(body => {
       window.localStorage.setItem('jwtAccess', body['access']);
-      window.location = '/dashboard';
+      window.location.reload();
+    });
+  });
+}
+
+
+export function fetchUsers(userURIs, callback) {
+  if (!hasJWT()) {
+    signOut();
+    return;
+  }
+
+  let userIDs = new Set();
+  userURIs.forEach(userURI => {
+    let id = userURI.replace(/\/$/, "");
+    id = id.substring(id.lastIndexOf('/') + 1);
+    userIDs.add(id);
+  });
+
+  let users = {};
+  userIDs.forEach(userID => {
+    let userURI = BASE_URL + '/api/auth/users/' + userID + '/';
+    fetch(userURI, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'JWT ' + getJWT(),
+      },
+    }).then(response => {
+      if (response.status === 401) {
+        refreshJWT();
+        return;
+      }
+
+      if (response.status !== 200) {
+        response.text().then(body => {
+          console.error("Unable to fetch user (" + userID + "): ", body);
+        });
+        return;
+      }
+
+      response.json().then(body => {
+        users[userID] = body;
+        users[userURI] = body;
+        callback(users);
+      });
     });
   });
 }

@@ -6,6 +6,7 @@ import SignUp from '../pages/SignUp';
 import SignIn from '../pages/SignIn';
 import Dashboard from "../pages/Dashboard";
 import Start from "../pages/Start";
+import AgentDetail from "../pages/AgentDetail";
 
 const Main = () => {
   return (
@@ -15,6 +16,7 @@ const Main = () => {
       <Route exact path='/signup' component={SignUp}/>
       <Route exact path='/signin' component={SignIn}/>
       <Route exact path='/dashboard' component={Dashboard}/>
+      <Route path='/agent/:id' component={AgentDetail}/>
     </Switch>
   );
 };
