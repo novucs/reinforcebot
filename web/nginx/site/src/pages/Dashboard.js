@@ -8,7 +8,9 @@ import {
   Grid,
   Header,
   Icon,
-  Label, Message,
+  Label,
+  List,
+  Message,
   Modal,
   Popup,
   Search,
@@ -19,6 +21,7 @@ import {BASE_URL, displayErrors, ensureSignedIn, getJWT, hasJWT, refreshJWT} fro
 import _ from 'lodash'
 import logo from "../icon.svg";
 import {SemanticToastContainer, toast} from 'react-semantic-toasts';
+import download from "../clientbinary";
 
 // const initialState = {isLoading: false, results: [], value: ''};
 // const source = ["blue", "red", "green"];
@@ -34,6 +37,7 @@ export default class Dashboard extends React.Component {
         // 'Agent already exists',
       ],
       agents: [],
+      agentParametersFileUpload: null,
     };
     this.fileInputRef = React.createRef();
   }
@@ -98,6 +102,14 @@ export default class Dashboard extends React.Component {
             <span><h1>{agent['name']}</h1></span>
             <br/>
             <span>{agent['author']}</span>
+            <Button
+              primary
+              download
+              href={agent['parameters']}
+              icon='cloud download'
+              content='Download'
+              size='medium'
+            />
             <div style={{textAlign: 'right'}}>
               <Button size='tiny' icon onClick={() => {
                 this.deleteAgent(agent['id'])
@@ -112,23 +124,48 @@ export default class Dashboard extends React.Component {
     return components;
   }
 
-  fileChange(event) {
-    console.log('File change: ', event);
+  agentFileChange(instance, input, event) {
+    let file = input.current.files[0];
+    if (!file.name.endsWith('.tar.gz')) {
+      toast(
+        {
+          type: 'error',
+          title: 'Bad file',
+          description: <p>You must select a valid agent file</p>
+        },
+      );
+      return;
+    }
+    instance.setState({agentParametersFileUpload: file});
+  }
+
+  closeAgentCreation() {
+    this.setState({
+      creatingAgent: false,
+      createAgentName: '',
+      createAgentDescription: '',
+      agentParametersFileUpload: null,
+      createAgentErrors: [],
+    });
   }
 
   createAgent() {
+    let data = new FormData();
+    data.append('name', this.state.createAgentName);
+    data.append('description', this.state.createAgentDescription);
+    data.append('parameters', this.state.agentParametersFileUpload);
+
     fetch(BASE_URL + '/api/agents/', {
-      method: 'POST',
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
+        // 'Accept': 'application/json',
+        // 'Content-Type': 'application/json',
         'Authorization': 'JWT ' + getJWT(),
       },
-      body: JSON.stringify({
-        name: this.state.createAgentName,
-        description: this.state.createAgentDescription,
-      }),
-    }).then(response => {
+      method: 'POST',
+      body: data,
+    }).then((response) => {
+      console.log(response);
+
       if (response.status !== 201) {
         response.json().then(body => {
           this.setState({
@@ -137,7 +174,9 @@ export default class Dashboard extends React.Component {
         });
         return;
       }
-      this.setState({creatingAgent: false});
+
+      this.closeAgentCreation();
+
       toast(
         {
           type: 'success',
@@ -145,12 +184,26 @@ export default class Dashboard extends React.Component {
           description: <p>Agent successfully created</p>
         },
       );
+
       this.fetchAgents();
     });
   }
 
-  canCreateAgent() {
-    return this.state.createAgentName !== '' && this.state.createAgentDescription !== '';
+  unableToCreateAgentReasons() {
+    let reasons = [];
+    if (this.state.createAgentName === '') {
+      reasons.push((<List.Item key='1'>The agent must have a name</List.Item>));
+    }
+
+    if (this.state.createAgentDescription === '') {
+      reasons.push((<List.Item key='2'>The agent must have a description</List.Item>));
+    }
+
+    if (this.state.agentParametersFileUpload === null) {
+      reasons.push((<List.Item key='3'>Agent training parameters must be provided</List.Item>));
+    }
+
+    return reasons;
   }
 
   componentDidMount() {
@@ -252,7 +305,7 @@ export default class Dashboard extends React.Component {
                       position='right center'
                       trigger={
                         <Button
-                          content="Choose File"
+                          content={this.state.agentParametersFileUpload === null ? "Choose File" : this.state.agentParametersFileUpload.name}
                           labelPosition="left"
                           icon="file"
                           color='green'
@@ -266,7 +319,9 @@ export default class Dashboard extends React.Component {
                       ref={this.fileInputRef}
                       type="file"
                       hidden
-                      onChange={this.fileChange}
+                      onChange={(event) => {
+                        this.agentFileChange(this, this.fileInputRef, event);
+                      }}
                     />
                     <Message
                       error
@@ -276,21 +331,29 @@ export default class Dashboard extends React.Component {
                     />
                   </Modal.Content>
                   <Modal.Actions>
-                    <Button basic color='red' inverted onClick={() => this.setState({
-                      createAgentName: '',
-                      createAgentDescription: '',
-                      creatingAgent: false
-                    })}>
+                    <Button basic color='red' inverted onClick={() => this.closeAgentCreation()}>
                       <Icon name='remove'/> Cancel
                     </Button>
-                    <Button
-                      color='green'
-                      inverted
-                      disabled={!this.canCreateAgent()}
-                      onClick={() => this.createAgent()}
-                    >
-                      <Icon name='checkmark'/> Create
-                    </Button>
+                    <Popup
+                      flowing
+                      position='bottom right'
+                      disabled={this.unableToCreateAgentReasons().length === 0}
+                      trigger={
+                        <span>
+                          <Button
+                            color='green'
+                            inverted
+                            disabled={this.unableToCreateAgentReasons().length !== 0}
+                            onClick={() => this.createAgent()}
+                          >
+                            <Icon name='checkmark'/> Create
+                          </Button>
+                        </span>
+                      }>
+                      <List bulleted>
+                        {this.unableToCreateAgentReasons()}
+                      </List>
+                    </Popup>
                   </Modal.Actions>
                 </Modal>
               </Grid.Column>

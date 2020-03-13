@@ -87,7 +87,14 @@ USE_TZ = True
 STATIC_URL = '/api/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
+MEDIA_URL = '/api/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 REST_FRAMEWORK = {
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.MultiPartParser'
+    ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
@@ -97,9 +104,7 @@ SIMPLE_JWT = {
    'AUTH_HEADER_TYPES': ('JWT',),
 }
 
-CORS_ORIGIN_WHITELIST = [
-    "http://localhost:3000",
-]
+CORS_ORIGIN_WHITELIST = list(filter(None, os.environ.get("CORS_ORIGIN_WHITELIST", default="").split(" ")))
 
 SWAGGER_SETTINGS = {
    'SECURITY_DEFINITIONS': {

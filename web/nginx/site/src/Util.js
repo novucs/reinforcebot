@@ -60,7 +60,7 @@ export function signIn(username, password, callback) {
     response.json().then(body => {
       window.localStorage.setItem('jwtAccess', body['access']);
       window.localStorage.setItem('jwtRefresh', body['refresh']);
-      window.location = '/dashboard';
+      window.location.reload();
     });
   });
 }

@@ -5,7 +5,8 @@ from simple_history.models import HistoricalRecords
 
 class Agent(models.Model):
     name = models.TextField()
-    # parameters = models.FileField()
+    description = models.TextField()
+    parameters = models.FileField(upload_to='agent-parameters/%Y/%m/%d/%H%M%S%f')
     author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     history = HistoricalRecords()
 
