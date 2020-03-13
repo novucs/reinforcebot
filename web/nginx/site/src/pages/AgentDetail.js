@@ -12,6 +12,7 @@ import {
   List,
   Loader,
   Modal,
+  Pagination,
   Segment
 } from "semantic-ui-react";
 import Footer from "../Footer";
@@ -26,6 +27,9 @@ export default class AgentDetail extends Component {
     this.state = {
       agent: null,
       users: {},
+      historyPageSize: 10,
+      historyPageCount: 0,
+      currentHistoryPage: 1,
       editingName: false,
       editingDescription: false,
       updatingModal: false,
@@ -64,7 +68,10 @@ export default class AgentDetail extends Component {
       }
 
       response.json().then(agent => {
-        this.setState({agent: agent});
+        this.setState({
+          agent: agent,
+          historyPageCount: Math.ceil(agent.history.length / this.state.historyPageSize),
+        });
 
         let userURIs = [agent.author];
         agent.history.forEach(h => {
@@ -80,7 +87,15 @@ export default class AgentDetail extends Component {
 
   agentHistory = () => {
     let history = [];
-    this.state.agent.history.forEach(item => {
+
+    let startIndex = (this.state.currentHistoryPage - 1) * this.state.historyPageSize;
+    let stopIndex = Math.min(
+      startIndex + this.state.historyPageSize,
+      this.state.agent.history.length
+    );
+
+    for (let i = startIndex; i < stopIndex; i++) {
+      let item = this.state.agent.history[i];
       if (!(item.history_user_id in this.state.users)) {
         return;
       }
@@ -93,7 +108,10 @@ export default class AgentDetail extends Component {
           </a>
         </List.Item>
       ));
-    });
+    }
+
+    // this.state.agent.history.forEach(item => {
+    // });
     return history;
   };
 
@@ -246,13 +264,17 @@ export default class AgentDetail extends Component {
     return lines;
   };
 
+  setHistoryPage = (event, {activePage}) => {
+    this.setState({currentHistoryPage: Math.ceil(activePage)});
+  };
+
   agentContent = () => (
     <div>
       <Header as="h2" color="teal" textAlign="center">
         <img src={logo} alt="logo" className="image"/>{" "}
         {this.state.agent.name}
       </Header>
-      <Grid>
+      <Grid style={{marginBottom: '32px'}}>
         <Grid.Column className='eleven wide'>
           <Segment textAlign='left'>
             <Breadcrumb icon='right angle' sections={[
@@ -269,6 +291,15 @@ export default class AgentDetail extends Component {
             <List>
               {this.agentHistory()}
             </List>
+            <Grid>
+              <Grid.Column textAlign='center'>
+                <Pagination
+                  defaultActivePage={this.state.currentHistoryPage}
+                  totalPages={this.state.historyPageCount}
+                  onPageChange={this.setHistoryPage}
+                />
+              </Grid.Column>
+            </Grid>
           </div>
         </Grid.Column>
         <Grid.Column className='five wide'>
