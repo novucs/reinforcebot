@@ -1,3 +1,5 @@
+import React from "react";
+
 export const BASE_URL = 'http://localhost:8080';
 
 export function displayErrors(...errors) {
@@ -158,15 +160,41 @@ export function deleteAgent(id, callback) {
       }
 
       if (response.status !== 204) {
-        response.text().then(body => {
-          console.error("Unable to delete agent: ", response);
-        });
+        console.error("Unable to delete agent: ", response);
         return;
       }
 
       callback();
     });
   }
+}
+
+export function createAgent(name, description, parametersFile, callback) {
+  let data = new FormData();
+  data.append('name', name);
+  data.append('description', description);
+  data.append('parameters', parametersFile);
+  data.append('changeReason', 'Initial creation');
+
+  fetch(BASE_URL + '/api/agents/', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'JWT ' + getJWT(),
+    },
+    body: data,
+  }).then((response) => {
+    if (response.status === 401) {
+      refreshJWT();
+      return;
+    }
+
+    if (response.status !== 201) {
+      console.error('Failed to create an agent: ', response);
+      return;
+    }
+
+    callback();
+  });
 }
 
 export function cropText(text, maxLength) {
