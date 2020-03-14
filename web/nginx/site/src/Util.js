@@ -111,7 +111,7 @@ export function fetchUsers(userURIs, callback) {
 
   let users = {};
   userIDs.forEach(userID => {
-    let userURI = BASE_URL + '/api/auth/users/' + userID + '/';
+    let userURI = BASE_URL + '/api/users/' + userID + '/';
     fetch(userURI, {
       method: 'GET',
       headers: {
@@ -135,6 +135,7 @@ export function fetchUsers(userURIs, callback) {
       response.json().then(body => {
         users[userID] = body;
         users[userURI] = body;
+        users[BASE_URL + '/api/auth/users/' + userID + '/'] = body;
         callback(users);
       });
     });

@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from simple_history.utils import update_change_reason
@@ -44,3 +45,10 @@ class AgentRetrieveSerializer(serializers.HyperlinkedModelSerializer):
         read_only_fields = ('author', 'history',)
 
     history = HistoricalRecordField(read_only=True)
+
+
+class UserRetrieveSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ('id', 'first_name', 'last_name', 'email', 'username')
+        read_only_fields = fields

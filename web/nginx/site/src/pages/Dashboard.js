@@ -11,7 +11,7 @@ import {
   Label,
   List,
   Message,
-  Modal,
+  Modal, Pagination,
   Popup,
   Search,
   Segment
@@ -48,6 +48,9 @@ export default class Dashboard extends React.Component {
       users: {},
       deleting: false,
       deletingAgent: null,
+      pageSize: 5,
+      currentPage: 1,
+      agentCount: 0,
     };
     this.fileInputRef = React.createRef();
   }
@@ -186,7 +189,7 @@ export default class Dashboard extends React.Component {
         },
       );
 
-      this.fetchAgents();
+      this.fetchAgents(this.state.currentPage);
     });
   };
 
@@ -209,15 +212,15 @@ export default class Dashboard extends React.Component {
 
   componentDidMount = () => {
     ensureSignedIn();
-    this.fetchAgents();
+    this.fetchAgents(this.state.currentPage);
   };
 
-  fetchAgents = () => {
+  fetchAgents = (url) => {
     if (!hasJWT()) {
       return;
     }
 
-    fetch(BASE_URL + '/api/agents/', {
+    fetch(BASE_URL + '/api/agents/?page_size=' + this.state.pageSize + '&page=' + this.state.currentPage, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -238,7 +241,10 @@ export default class Dashboard extends React.Component {
       }
 
       response.json().then(body => {
-        this.setState({agents: body});
+        this.setState({
+          agents: body.results,
+          agentCount: body.count,
+        });
         let userURIs = new Set();
         this.state.agents.forEach(agent => {
           userURIs.add(agent['author']);
@@ -266,7 +272,7 @@ export default class Dashboard extends React.Component {
         <b>Warning:</b> Deleting the agent <b>"{agent.name}"</b>, are you sure you want to do this?
       </Modal.Content>
       <Modal.Actions>
-        <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
+        <Button basic color='grey' inverted onClick={() => this.setState({deleting: false})}>
           Cancel
         </Button>
         <Button
@@ -280,11 +286,118 @@ export default class Dashboard extends React.Component {
     </Modal>
   );
 
+  createAgentModal = () => (
+    <Modal open={this.state.creatingAgent}
+           trigger={
+             <Button icon positive onClick={() =>
+               this.setState({creatingAgent: true})
+             }>
+               <Icon name='plus'/>{} Create a new agent
+             </Button>
+           }
+           basic
+           size='small'>
+      <Header icon='add square' content='Create Agent'/>
+      <Modal.Content>
+        <p>Create an agent to backup on our cloud service.</p>
+        <Form.Input
+          fluid
+          required
+          icon="tag"
+          iconPosition="left"
+          placeholder="Name"
+          onChange={event => this.setState({createAgentName: event.target.value})}
+        />
+        <p/>
+        <Form.Input
+          fluid
+          required
+          icon="pencil"
+          iconPosition="left"
+          placeholder="Description"
+          onChange={event => this.setState({createAgentDescription: event.target.value})}
+        />
+        <p/>
+        <Popup
+          flowing
+          position='right center'
+          trigger={
+            <Button
+              content={this.state.agentParametersFileUpload === null ? "Choose File" : this.state.agentParametersFileUpload.name}
+              labelPosition="left"
+              icon="file"
+              color='green'
+              onClick={() => this.fileInputRef.current.click()}
+            />
+          }>
+          Find your agent parameter files
+          under: <br/><code>/home/&lt;username&gt;/.agents/&lt;name&gt;-&lt;timestamp&gt;.tar.gz</code>
+        </Popup>
+        <input
+          ref={this.fileInputRef}
+          type="file"
+          hidden
+          onChange={(event) => {
+            this.agentFileChange(this.fileInputRef);
+          }}
+        />
+        <Message
+          error
+          header='Cannot create agent'
+          list={this.state.createAgentErrors}
+          hidden={this.state.createAgentErrors.length === 0}
+        />
+      </Modal.Content>
+      <Modal.Actions>
+        <Button basic color='grey' inverted onClick={() => this.closeAgentCreation()}>
+          <Icon name='remove'/> Cancel
+        </Button>
+        <Popup
+          flowing
+          position='bottom right'
+          disabled={this.unableToCreateAgentReasons().length === 0}
+          trigger={
+            <span>
+              <Button
+                color='green'
+                inverted
+                disabled={this.unableToCreateAgentReasons().length !== 0}
+                onClick={() => this.createAgent()}
+              >
+                <Icon name='checkmark'/> Create
+              </Button>
+            </span>
+          }>
+          <List bulleted>
+            {this.unableToCreateAgentReasons()}
+          </List>
+        </Popup>
+      </Modal.Actions>
+    </Modal>
+  );
+
+  setPage = (event, {activePage}) => {
+    this.setState({currentPage: Math.ceil(activePage)}, this.fetchAgents);
+  };
+
+  getPagination() {
+    let totalPages = Math.ceil(this.state.agentCount / this.state.pageSize);
+    if (totalPages <= 1) {
+      return;
+    }
+
+    return <Pagination
+      activePage={this.state.currentPage}
+      totalPages={totalPages}
+      onPageChange={this.setPage}
+    />;
+  }
+
   render = () => (
     <div className="SitePage">
       <TopMenu/>
       <SemanticToastContainer position='bottom-right'/>
-      <Container className="SiteContents" style={{marginTop: '80px'}}>
+      <Container className="SiteContents" style={{marginTop: '80px', marginBottom: '32px'}}>
         <Header as="h2" color="teal" textAlign="center">
           <img src={logo} alt="logo" className="image"/>{" "}
           Agents
@@ -305,100 +418,16 @@ export default class Dashboard extends React.Component {
               />
             </Grid.Column>
             <Grid.Column>
-              <Modal open={this.state.creatingAgent}
-                     trigger={
-                       <Button icon positive onClick={() =>
-                         this.setState({creatingAgent: true})
-                       }>
-                         <Icon name='plus'/>{} Create a new agent
-                       </Button>
-                     }
-                     basic
-                     size='small'>
-                <Header icon='add square' content='Create Agent'/>
-                <Modal.Content>
-                  <p>Create an agent to backup on our cloud service.</p>
-                  <Form.Input
-                    fluid
-                    required
-                    icon="tag"
-                    iconPosition="left"
-                    placeholder="Name"
-                    onChange={event => this.setState({createAgentName: event.target.value})}
-                  />
-                  <p/>
-                  <Form.Input
-                    fluid
-                    required
-                    icon="pencil"
-                    iconPosition="left"
-                    placeholder="Description"
-                    onChange={event => this.setState({createAgentDescription: event.target.value})}
-                  />
-                  <p/>
-                  <Popup
-                    flowing
-                    position='right center'
-                    trigger={
-                      <Button
-                        content={this.state.agentParametersFileUpload === null ? "Choose File" : this.state.agentParametersFileUpload.name}
-                        labelPosition="left"
-                        icon="file"
-                        color='green'
-                        onClick={() => this.fileInputRef.current.click()}
-                      />
-                    }>
-                    Find your agent parameter files
-                    under: <br/><code>/home/&lt;username&gt;/.agents/&lt;name&gt;-&lt;timestamp&gt;.tar.gz</code>
-                  </Popup>
-                  <input
-                    ref={this.fileInputRef}
-                    type="file"
-                    hidden
-                    onChange={(event) => {
-                      this.agentFileChange(this.fileInputRef);
-                    }}
-                  />
-                  <Message
-                    error
-                    header='Cannot create agent'
-                    list={this.state.createAgentErrors}
-                    hidden={this.state.createAgentErrors.length === 0}
-                  />
-                </Modal.Content>
-                <Modal.Actions>
-                  <Button basic color='grey' inverted onClick={() => this.closeAgentCreation()}>
-                    <Icon name='remove'/> Cancel
-                  </Button>
-                  <Popup
-                    flowing
-                    position='bottom right'
-                    disabled={this.unableToCreateAgentReasons().length === 0}
-                    trigger={
-                      <span>
-                          <Button
-                            color='green'
-                            inverted
-                            disabled={this.unableToCreateAgentReasons().length !== 0}
-                            onClick={() => this.createAgent()}
-                          >
-                            <Icon name='checkmark'/> Create
-                          </Button>
-                        </span>
-                    }>
-                    <List bulleted>
-                      {this.unableToCreateAgentReasons()}
-                    </List>
-                  </Popup>
-                </Modal.Actions>
-              </Modal>
+              {this.createAgentModal()}
             </Grid.Column>
           </Grid>
           <Divider vertical>Or</Divider>
         </Segment>
+        {this.getPagination()}
         <Grid style={{marginTop: '16px', marginBottom: '16px'}}>
           {this.agentComponents()}
         </Grid>
+        {this.getPagination()}
       </Container>
       < Footer/>
     </div>

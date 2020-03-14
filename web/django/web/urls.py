@@ -6,7 +6,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from web import settings
-from web.api import AgentViewSet
+from web.api import AgentViewSet, UserRetrieveViewSet
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -20,6 +20,7 @@ schema_view = get_schema_view(
 
 router = routers.DefaultRouter()
 router.register(r'agents', AgentViewSet)
+router.register(r'users', UserRetrieveViewSet)
 
 urlpatterns = [
     url(r'^api/', include(router.urls)),

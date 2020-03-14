@@ -114,7 +114,13 @@ export default class AgentDetail extends Component {
             </a>
           </Table.Cell>
           <Table.Cell>
-            {user.username}
+            <Popup
+              inverted
+              hoverable
+              position='bottom center'
+              content={user.first_name + ' ' + user.last_name}
+              trigger={<span>{user.username}</span>}
+            />
           </Table.Cell>
           <Table.Cell>{item.history_change_reason}</Table.Cell>
           <Table.Cell>
