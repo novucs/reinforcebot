@@ -1,7 +1,7 @@
 import React, {Component} from "react";
-import {BASE_URL, createAgent, displayErrors, getJWT, refreshJWT} from "../Util";
+import {createAgent} from "../Util";
 import {toast} from "react-semantic-toasts";
-import {Button, Form, Header, Icon, List, Message, Modal, Popup} from "semantic-ui-react";
+import {Button, Form, Header, Icon, List, Modal, Popup} from "semantic-ui-react";
 
 export default class CreateAgentModal extends Component {
   constructor(props) {

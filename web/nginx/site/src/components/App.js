@@ -7,12 +7,9 @@ export default class App extends Component {
     document.body.style.background = '#F7F7F7';
   }
 
-  render() {
-    return (
-      <div className="App">
-        {/*<Navbar />*/}
-        <Main/>
-      </div>
-    );
-  }
+  render = () => (
+    <div className="App">
+      <Main/>
+    </div>
+  );
 }

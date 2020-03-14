@@ -39,7 +39,7 @@ export default class AgentShortDetail extends Component {
         </Grid.Column>
         <Grid.Column>
           <div style={{textAlign: 'right'}}>
-            <DeleteAgentModal agent={this.props.agent}/>
+            <DeleteAgentModal small agent={this.props.agent}/>
           </div>
         </Grid.Column>
       </Grid>

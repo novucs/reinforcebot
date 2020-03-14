@@ -7,11 +7,12 @@ import App from "./components/App";
 import 'semantic-ui-css/semantic.css';
 import 'react-semantic-toasts/styles/react-semantic-alert.css';
 
+
 ReactDOM.render(
-    <BrowserRouter>
-        <App/>
-    </BrowserRouter>,
-    document.getElementById('root')
+  <BrowserRouter>
+    <App/>
+  </BrowserRouter>,
+  document.getElementById('root')
 );
 
 // If you want your app to work offline and load faster, you can change

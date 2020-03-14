@@ -6,20 +6,38 @@ export default class DeleteAgentModal extends Component {
   constructor(props) {
     // props:
     // agent: Agent
+    // small: boolean
     super(props);
     this.state = {deleting: false};
+  }
+
+  trigger() {
+    if (this.props.small) {
+      return (
+        <Button icon onClick={() => {
+          this.setState({deleting: true})
+        }} color='red'>
+          <Icon name='cancel'/>
+        </Button>
+      );
+    }
+
+    return (
+      <Button
+        fluid
+        style={{marginTop: '5px'}}
+        color='red'
+        icon='cancel'
+        content='Delete'
+        onClick={() => this.setState({deleting: true})}
+      />
+    );
   }
 
   render = () => {
     return (
       <Modal open={this.state.deleting}
-             trigger={
-               <Button icon onClick={() => {
-                 this.setState({deleting: true})
-               }} color='red'>
-                 <Icon name='cancel'/>
-               </Button>
-             }
+             trigger={this.trigger()}
              basic
              size='small'>
         <Header icon='cancel' content='Delete Agent'/>

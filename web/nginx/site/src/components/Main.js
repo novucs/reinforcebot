@@ -2,14 +2,14 @@ import React from 'react';
 import {Route, Switch} from 'react-router-dom';
 
 import Home from '../pages/Home';
-import SignUp from '../pages/SignUp';
 import SignIn from '../pages/SignIn';
 import Dashboard from "../pages/Dashboard";
 import Start from "../pages/Start";
 import AgentDetail from "../pages/AgentDetail";
+import SignUp from "../pages/SignUp";
 
-const Main = () => {
-  return (
+export default class Main extends React.Component {
+  render = () => (
     <Switch>
       <Route exact path='/' component={Home}/>
       <Route exact path='/start' component={Start}/>
@@ -19,6 +19,4 @@ const Main = () => {
       <Route path='/agent/:id' component={AgentDetail}/>
     </Switch>
   );
-};
-
-export default Main;
+}

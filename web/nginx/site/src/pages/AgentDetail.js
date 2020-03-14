@@ -22,6 +22,7 @@ import logo from "../icon.svg";
 import {BASE_URL, deleteAgent, ensureSignedIn, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
 import Moment from 'moment';
 import {SemanticToastContainer, toast} from "react-semantic-toasts";
+import DeleteAgentModal from "../components/DeleteAgentModal";
 
 export default class AgentDetail extends Component {
   constructor(props) {
@@ -494,7 +495,7 @@ export default class AgentDetail extends Component {
             {this.editNameModal()}
             {this.editDescriptionModal()}
             {this.updateParametersModal()}
-            {this.deleteAgentModal()}
+            <DeleteAgentModal agent={this.state.agent}/>
           </Segment>
         </Grid.Column>
       </Grid>
