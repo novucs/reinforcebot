@@ -79,6 +79,8 @@ export default class AgentDetail extends Component {
           historyPageCount: Math.ceil(agent.history.length / this.state.historyPageSize),
         });
 
+        console.log(agent);
+
         let userURIs = [agent.author];
         agent.history.forEach(h => {
           userURIs.push(BASE_URL + '/api/auth/users/' + h.history_user_id + '/');
@@ -108,7 +110,7 @@ export default class AgentDetail extends Component {
       let user = this.state.users[item.history_user_id];
       Moment.locale('en');
       history.push((
-        <Table.Row>
+        <Table.Row key={item.history_id}>
           <Table.Cell>
             <a download href={BASE_URL + '/api/media/' + item.parameters}>
               <Icon name='cloud download'/>
@@ -153,14 +155,15 @@ export default class AgentDetail extends Component {
     });
   };
 
-  editAgent = fieldName => {
+  editAgent = (fieldName, changeReason) => {
     if (!hasJWT() || this.state.agent[fieldName] === '') {
       return;
     }
 
     let body = {};
     body[fieldName] = this.state.agent[fieldName];
-    body['changeReason'] = 'Updated ' + fieldName;
+    changeReason = changeReason === undefined ? 'Updated ' + fieldName : changeReason;
+    body['changeReason'] = changeReason;
 
     fetch(BASE_URL + '/api/agents/' + this.state.agent.id + '/', {
       method: 'PATCH',
@@ -496,11 +499,38 @@ export default class AgentDetail extends Component {
             {this.editDescriptionModal()}
             {this.updateParametersModal()}
             <DeleteAgentModal agent={this.state.agent}/>
+
+            {this.publicizeButton()}
           </Segment>
         </Grid.Column>
       </Grid>
     </div>
   );
+
+  changePublicStatus = () => {
+    this.setState({agent: {...this.state.agent, 'public': !this.state.agent.public}}, () => {
+      let reason = this.state.agent.public ? 'Made agent public' : 'Made agent private';
+      this.editAgent('public', reason);
+    });
+  };
+
+  publicizeButton() {
+    if (this.state.agent.public) {
+      return (
+        <Button onClick={this.changePublicStatus} animated color='green' fluid style={{marginTop: '5px'}}>
+          <Button.Content visible><Icon name='lock open'/>{' '}Public</Button.Content>
+          <Button.Content hidden><Icon name='lock'/>{' '}Go Private?</Button.Content>
+        </Button>
+      );
+    }
+
+    return (
+      <Button onClick={this.changePublicStatus} animated color='red' fluid style={{marginTop: '5px'}}>
+        <Button.Content visible><Icon name='lock'/>{' '}Private</Button.Content>
+        <Button.Content hidden><Icon name='lock open'/>{' '}Go Public?</Button.Content>
+      </Button>
+    );
+  }
 
   render = () => (
     <div className="SitePage">
