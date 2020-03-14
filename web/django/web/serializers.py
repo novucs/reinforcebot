@@ -3,7 +3,7 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from simple_history.utils import update_change_reason
 
-from web.models import Agent
+from web.models import Agent, Contributor
 
 additional_user_fields = ('first_name', 'last_name')
 UserSerializer.Meta.fields += additional_user_fields
@@ -17,10 +17,29 @@ class HistoricalRecordField(serializers.ListField):
         return super().to_representation(data.values())
 
 
+class UserRetrieveSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ('id', 'first_name', 'last_name', 'email', 'username')
+        read_only_fields = fields
+
+
+class ContributorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contributor
+        fields = ('user_id', 'agent_id')
+
+
+class ContributorViaAgentSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Contributor
+        fields = ('user',)
+
+
 class AgentSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Agent
-        fields = ('id', 'name', 'description', 'parameters', 'author', 'changeReason')
+        fields = ('id', 'name', 'description', 'public', 'parameters', 'author', 'changeReason')
         read_only_fields = ('author',)
 
     changeReason = serializers.CharField(write_only=True)
@@ -41,14 +60,8 @@ class AgentSerializer(serializers.HyperlinkedModelSerializer):
 class AgentRetrieveSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Agent
-        fields = ('id', 'name', 'description', 'parameters', 'author', 'history')
+        fields = ('id', 'name', 'description', 'public', 'parameters', 'author', 'history', 'contributors')
         read_only_fields = ('author', 'history',)
 
     history = HistoricalRecordField(read_only=True)
-
-
-class UserRetrieveSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = get_user_model()
-        fields = ('id', 'first_name', 'last_name', 'email', 'username')
-        read_only_fields = fields
+    contributors = ContributorViaAgentSerializer(many=True)

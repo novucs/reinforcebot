@@ -1,9 +1,8 @@
 import React from 'react';
 import TopMenu from "../TopMenu";
-import {Container, Divider, Grid, Header, Search, Segment} from "semantic-ui-react";
+import {Container, Divider, Grid, Header, Input, Segment} from "semantic-ui-react";
 import Footer from "../Footer";
 import {BASE_URL, ensureSignedIn, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
-import _ from 'lodash'
 import logo from "../icon.svg";
 import {SemanticToastContainer} from 'react-semantic-toasts';
 import AgentGrid from "../components/AgentGrid";
@@ -18,14 +17,10 @@ export default class Dashboard extends React.Component {
       agents: [],
       users: {},
       agentCount: 0,
+      search: '',
     };
     this.pageSize = 5;
   }
-
-  handleResultSelect = (e, {result}) => this.setState({value: result.title});
-
-  handleSearchChange = (e, {value}) => {
-  };
 
   componentDidMount = () => {
     ensureSignedIn();
@@ -37,7 +32,12 @@ export default class Dashboard extends React.Component {
       return;
     }
 
-    fetch(BASE_URL + '/api/agents/?page_size=' + this.pageSize + '&page=' + page, {
+    let url = BASE_URL + '/api/agents/?page_size=' + this.pageSize + '&page=' + page;
+    if (this.state.search !== '') {
+      url += '&search=' + this.state.search;
+    }
+
+    fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -97,15 +97,13 @@ export default class Dashboard extends React.Component {
         <Segment basic textAlign='center'>
           <Grid columns={2} relaxed='very'>
             <Grid.Column>
-              <Search
+              <Input
                 placeholder='Search agents'
-                loading={this.state.isLoading}
-                onResultSelect={this.handleResultSelect}
-                onSearchChange={_.debounce(this.handleSearchChange, 500, {
-                  leading: true,
-                })}
-                results={this.state.results}
-                value={this.state.value}
+                onChange={(event) => {
+                  this.setState({search: event.target.value}, () => {
+                    this.fetchAgents(1);
+                  });
+                }}
               />
             </Grid.Column>
             <Grid.Column>
