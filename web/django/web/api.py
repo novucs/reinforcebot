@@ -5,7 +5,6 @@ from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import JSONParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
 
 from web.models import Agent, Contributor
 from web.serializers import AgentRetrieveSerializer, AgentSerializer, ContributorSerializer, UserRetrieveSerializer
@@ -20,17 +19,22 @@ class StandardResultsSetPagination(PageNumberPagination):
 class AgentViewSet(viewsets.ModelViewSet):
     queryset = Agent.objects.all()
     serializer_class = AgentSerializer
-    permission_classes = (IsAuthenticated,)
     parser_classes = [MultiPartParser, JSONParser]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        qs = Q(author=self.request.user)
-        if self.action in ('partial_update', 'update'):
-            qs |= Q(contributors__user=self.request.user)
-        if self.action in ('retrieve', 'list'):
-            qs |= Q(contributors__user=self.request.user)
-            qs |= Q(public=True)
+        if self.request.user.is_authenticated:
+            qs = Q(author=self.request.user)
+            if self.action in ('partial_update', 'update'):
+                qs |= Q(contributors__user=self.request.user)
+            if self.action in ('retrieve', 'list'):
+                qs |= Q(contributors__user=self.request.user)
+                qs |= Q(public=True)
+        else:
+            if self.action not in ('retrieve', 'list'):
+                raise SuspiciousOperation('Unauthenticated users may only view public resources')
+            qs = Q(public=True)
+
         if self.action == 'list' and 'search' in self.request.query_params:
             search = self.request.query_params['search']
             queryset = self.queryset.annotate(
@@ -44,7 +48,7 @@ class AgentViewSet(viewsets.ModelViewSet):
             )
             queryset = queryset.order_by('name_distance', 'description_distance')
             return queryset.distinct()
-        return self.queryset.filter(qs).distinct()
+        return self.queryset.filter(qs).distinct().order_by('id')
 
     def get_serializer_class(self, *args, **kwargs):
         if self.action == 'retrieve':
@@ -63,7 +67,6 @@ class AgentViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = get_user_model().objects.all()
     serializer_class = UserRetrieveSerializer
-    permission_classes = (IsAuthenticated,)
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
@@ -81,18 +84,26 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 class ContributorViewSet(viewsets.ModelViewSet):
     queryset = Contributor.objects.all()
     serializer_class = ContributorSerializer
-    permission_classes = (IsAuthenticated,)
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        qs = Q(agent__author=self.request.user)
-        if self.action == 'destroy':
-            qs |= Q(user=self.request.user)
-        if self.action in ('retrieve', 'list'):
-            qs |= Q(user=self.request.user)
-            qs |= Q(agent__contributors__user=self.request.user)
-            qs |= Q(agent__public=True)
-        return self.queryset.filter(qs).distinct()
+        if self.request.user.is_authenticated:
+            qs = Q(agent__author=self.request.user)
+            if self.action == 'destroy':
+                qs |= Q(user=self.request.user)
+            if self.action in ('retrieve', 'list'):
+                qs |= Q(user=self.request.user)
+                qs |= Q(agent__contributors__user=self.request.user)
+                qs |= Q(agent__public=True)
+        else:
+            if self.action not in ('retrieve', 'list'):
+                raise SuspiciousOperation('Unauthenticated users may only view public resources')
+            qs = Q(agent__public=True)
+
+        if 'agent_id' in self.request.query_params:
+            qs &= Q(agent_id=self.request.query_params['agent_id'])
+
+        return self.queryset.filter(qs).distinct().order_by('id')
 
     def perform_create(self, serializer):
         agent = Agent.objects.all().filter(id=self.request.data['agent_id']).first()

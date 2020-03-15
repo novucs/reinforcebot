@@ -1,5 +1,5 @@
 import React, {Component} from "react";
-import {BASE_URL, getJWT, refreshJWT} from "../Util";
+import {BASE_URL, getAuthorization, refreshJWT} from "../Util";
 import {toast} from "react-semantic-toasts";
 import {Button, Grid, Header, Icon, List, Modal, Search} from "semantic-ui-react";
 
@@ -36,7 +36,7 @@ class ContributorList extends Component {
     });
 
     return (
-      <List>
+      <List relaxed>
         {contributors}
       </List>
     );
@@ -48,12 +48,12 @@ class ContributorList extends Component {
       canDelete = this.props.me.id === contributor.user.id ||
         this.props.agent.author === this.props.me.id;
     }
+
+    if (!canDelete) return null;
+
     return (
-      <span>
-        <Button disabled={!canDelete} basic negative icon='cancel' onClick={() => this.props.onDelete(contributor)}
-                size='mini'/>
-        {' '}
-      </span>
+      <Button basic negative icon='cancel' onClick={() => this.props.onDelete(contributor)}
+              size='mini'/>
     );
   }
 }
@@ -73,12 +73,12 @@ export default class AgentContributorsModal extends Component {
   }
 
   componentDidMount = () => {
-    fetch(BASE_URL + '/api/contributors/', {
+    fetch(BASE_URL + '/api/contributors/?agent_id=' + this.props.agent.id, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': 'JWT ' + getJWT(),
+        ...getAuthorization(),
       },
     }).then(response => {
       if (response.status === 401) {
@@ -92,6 +92,7 @@ export default class AgentContributorsModal extends Component {
       }
 
       response.json().then(contributors => {
+        console.log(contributors);
         this.setState({contributors: contributors.results});
       })
     });
@@ -104,7 +105,7 @@ export default class AgentContributorsModal extends Component {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': 'JWT ' + getJWT(),
+        ...getAuthorization(),
       },
     }).then(response => {
       this.setState({isLoading: false});
@@ -138,7 +139,7 @@ export default class AgentContributorsModal extends Component {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': 'JWT ' + getJWT(),
+        ...getAuthorization(),
       },
       body: JSON.stringify({
         agent_id: this.props.agent.id,
@@ -175,12 +176,8 @@ export default class AgentContributorsModal extends Component {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': 'JWT ' + getJWT(),
+        ...getAuthorization(),
       },
-      body: JSON.stringify({
-        agent_id: this.props.agent.id,
-        user_id: contributor.id,
-      }),
     }).then(response => {
       if (response.status === 401) {
         refreshJWT();

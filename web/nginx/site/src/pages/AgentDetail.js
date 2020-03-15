@@ -19,7 +19,7 @@ import {
 } from "semantic-ui-react";
 import Footer from "../Footer";
 import logo from "../icon.svg";
-import {BASE_URL, ensureSignedIn, fetchMe, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
+import {BASE_URL, fetchMe, fetchUsers, getAuthorization, hasJWT, refreshJWT} from "../Util";
 import Moment from 'moment';
 import {SemanticToastContainer, toast} from "react-semantic-toasts";
 import DeleteAgentModal from "../components/DeleteAgentModal";
@@ -43,22 +43,17 @@ export default class AgentDetail extends Component {
   }
 
   componentDidMount = () => {
-    ensureSignedIn();
     this.fetchAgent();
     fetchMe(me => this.setState({me}));
   };
 
   fetchAgent = () => {
-    if (!hasJWT()) {
-      return;
-    }
-
     fetch(BASE_URL + '/api/agents/' + this.props.match.params.id + '/', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': 'JWT ' + getJWT(),
+        ...getAuthorization(),
       },
     }).then(response => {
       if (response.status === 401) {
@@ -164,7 +159,7 @@ export default class AgentDetail extends Component {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': 'JWT ' + getJWT(),
+        ...getAuthorization(),
       },
       body: JSON.stringify(body)
     }).then(response => {
@@ -307,7 +302,7 @@ export default class AgentDetail extends Component {
     fetch(BASE_URL + '/api/agents/' + this.state.agent.id + '/', {
       method: 'PATCH',
       headers: {
-        'Authorization': 'JWT ' + getJWT(),
+        ...getAuthorization(),
       },
       body: data,
     }).then(response => {
@@ -435,8 +430,8 @@ export default class AgentDetail extends Component {
         <Grid.Column className='eleven wide'>
           <Segment textAlign='left'>
             <Breadcrumb icon='right angle' sections={[
-              {key: 'Dashboard', content: 'Dashboard', href: '/dashboard'},
-              {key: 'Agent', content: 'Agent', active: true},
+              {key: 'Agents', content: 'Agents', href: '/agents'},
+              {key: this.state.agent?.name, content: this.state.agent?.name, active: true},
             ]}/>
             <Divider/>
             <List className='large text'>

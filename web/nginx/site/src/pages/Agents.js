@@ -2,7 +2,7 @@ import React from 'react';
 import TopMenu from "../components/TopMenu";
 import {Container, Divider, Grid, Header, Input, Segment} from "semantic-ui-react";
 import Footer from "../Footer";
-import {BASE_URL, ensureSignedIn, fetchMe, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
+import {BASE_URL, fetchMe, fetchUsers, getAuthorization, refreshJWT} from "../Util";
 import logo from "../icon.svg";
 import {SemanticToastContainer} from 'react-semantic-toasts';
 import AgentGrid from "../components/AgentGrid";
@@ -10,7 +10,7 @@ import CreateAgentModal from "../components/CreateAgentModal";
 import RESTPagination from "../components/RESTPagination";
 
 
-export default class Dashboard extends React.Component {
+export default class Agents extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -23,16 +23,11 @@ export default class Dashboard extends React.Component {
   }
 
   componentDidMount = () => {
-    ensureSignedIn();
     this.fetchAgents(1);
     fetchMe(me => this.setState({me}));
   };
 
   fetchAgents = (page) => {
-    if (!hasJWT()) {
-      return;
-    }
-
     let url = BASE_URL + '/api/agents/?page_size=' + this.pageSize + '&page=' + page;
     if (this.state.search !== '') {
       url += '&search=' + this.state.search;
@@ -43,7 +38,7 @@ export default class Dashboard extends React.Component {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': 'JWT ' + getJWT(),
+        ...getAuthorization(),
       },
     }).then(response => {
       if (response.status === 401) {

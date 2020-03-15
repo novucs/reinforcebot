@@ -19,6 +19,13 @@ export function getJWT() {
   return window.localStorage.getItem('jwtAccess');
 }
 
+export function getAuthorization() {
+  if (hasJWT()) {
+    return {'Authorization': 'JWT ' + getJWT()};
+  }
+  return {};
+}
+
 export function ensureSignedIn() {
   if (!hasJWT()) {
     window.location = '/signin';
@@ -27,7 +34,7 @@ export function ensureSignedIn() {
 
 export function ensureSignedOut() {
   if (hasJWT()) {
-    window.location = '/dashboard';
+    window.location = '/agents';
   }
 }
 
@@ -90,18 +97,13 @@ export function refreshJWT() {
 
     response.json().then(body => {
       window.localStorage.setItem('jwtAccess', body['access']);
-      window.location.reload();
+      // window.location.reload();
     });
   });
 }
 
 
 export function fetchUsers(userIDs, callback) {
-  if (!hasJWT()) {
-    signOut();
-    return;
-  }
-
   let users = {};
   userIDs.forEach(userID => {
     let userURI = BASE_URL + '/api/users/' + userID + '/';
@@ -110,7 +112,7 @@ export function fetchUsers(userIDs, callback) {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': 'JWT ' + getJWT(),
+        ...getAuthorization(),
       },
     }).then(response => {
       if (response.status === 401) {
@@ -134,28 +136,30 @@ export function fetchUsers(userIDs, callback) {
 }
 
 export function deleteAgent(id, callback) {
-  if (hasJWT()) {
-    fetch(BASE_URL + '/api/agents/' + id + '/', {
-      method: 'DELETE',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': 'JWT ' + getJWT(),
-      },
-    }).then(response => {
-      if (response.status === 401) {
-        refreshJWT();
-        return;
-      }
-
-      if (response.status !== 204) {
-        console.error("Unable to delete agent: ", response);
-        return;
-      }
-
-      callback();
-    });
+  if (!hasJWT()) {
+    return;
   }
+
+  fetch(BASE_URL + '/api/agents/' + id + '/', {
+    method: 'DELETE',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+        ...getAuthorization(),
+    },
+  }).then(response => {
+    if (response.status === 401) {
+      refreshJWT();
+      return;
+    }
+
+    if (response.status !== 204) {
+      console.error("Unable to delete agent: ", response);
+      return;
+    }
+
+    callback();
+  });
 }
 
 export function createAgent(name, description, parametersFile, callback) {
@@ -168,7 +172,7 @@ export function createAgent(name, description, parametersFile, callback) {
   fetch(BASE_URL + '/api/agents/', {
     method: 'POST',
     headers: {
-      'Authorization': 'JWT ' + getJWT(),
+        ...getAuthorization(),
     },
     body: data,
   }).then((response) => {
@@ -196,7 +200,7 @@ export function fetchMe(callback) {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'Authorization': 'JWT ' + getJWT(),
+        ...getAuthorization(),
     },
   }).then(response => {
     if (response.status === 401) {

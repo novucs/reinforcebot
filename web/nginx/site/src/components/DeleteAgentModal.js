@@ -56,7 +56,7 @@ export default class DeleteAgentModal extends Component {
           <Button
             color='red'
             inverted
-            onClick={() => deleteAgent(this.props.agent.id, () => window.location = '/dashboard')}>
+            onClick={() => deleteAgent(this.props.agent.id, () => window.location = '/agents')}>
             Delete
           </Button>
         </Modal.Actions>
