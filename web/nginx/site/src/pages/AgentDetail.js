@@ -19,10 +19,11 @@ import {
 } from "semantic-ui-react";
 import Footer from "../Footer";
 import logo from "../icon.svg";
-import {BASE_URL, deleteAgent, ensureSignedIn, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
+import {BASE_URL, ensureSignedIn, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
 import Moment from 'moment';
 import {SemanticToastContainer, toast} from "react-semantic-toasts";
 import DeleteAgentModal from "../components/DeleteAgentModal";
+import AgentContributorsModal from "../components/AgentContributorsModal";
 
 export default class AgentDetail extends Component {
   constructor(props) {
@@ -37,8 +38,6 @@ export default class AgentDetail extends Component {
       editingDescription: false,
       updatingModal: false,
       agentParametersFileUpload: null,
-      deleting: false,
-      deleteValue: false,
     };
     this.fileInputRef = React.createRef();
   }
@@ -139,8 +138,6 @@ export default class AgentDetail extends Component {
       ));
     }
 
-    // this.state.agent.history.forEach(item => {
-    // });
     return history;
   };
 
@@ -150,8 +147,6 @@ export default class AgentDetail extends Component {
       editingDescription: false,
       updatingModal: false,
       agentParametersFileUpload: null,
-      deleting: false,
-      deleteValue: false,
     });
   };
 
@@ -394,39 +389,6 @@ export default class AgentDetail extends Component {
     </Modal>
   );
 
-  deleteAgentModal = () => (
-    <Modal open={this.state.deleting}
-           trigger={
-             <Button
-               fluid
-               style={{marginTop: '5px'}}
-               color='red'
-               icon='cancel'
-               content='Delete'
-               onClick={() => this.setState({deleting: true})}
-             />
-           }
-           basic
-           size='small'>
-      <Header icon='cancel' content='Delete Agent'/>
-      <Modal.Content>
-        <b>Warning:</b> Deleting the agent <b>"{this.state.agent.name}"</b>, are you sure you want to do this?
-      </Modal.Content>
-      <Modal.Actions>
-        <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
-          Cancel
-        </Button>
-        <Button
-          color='red'
-          inverted
-          onClick={() => deleteAgent(this.state.agent.id, () => window.location = '/dashboard')}
-        >
-          Delete
-        </Button>
-      </Modal.Actions>
-    </Modal>
-  );
-
   descriptionLines = () => {
     let lines = [];
     let i = 0;
@@ -499,8 +461,8 @@ export default class AgentDetail extends Component {
             {this.editDescriptionModal()}
             {this.updateParametersModal()}
             <DeleteAgentModal agent={this.state.agent}/>
-
             {this.publicizeButton()}
+            <AgentContributorsModal agent={this.state.agent}/>
           </Segment>
         </Grid.Column>
       </Grid>

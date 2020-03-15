@@ -13,6 +13,9 @@ class Agent(models.Model):
 
 
 class Contributor(models.Model):
+    class Meta:
+        unique_together = ('user_id', 'agent_id')
+
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='contributors')
 

@@ -25,7 +25,7 @@ class AgentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Q(author=self.request.user)
-        if self.action == 'update':
+        if self.action in ('partial_update', 'update'):
             qs |= Q(contributors__user=self.request.user)
         if self.action in ('retrieve', 'list'):
             qs |= Q(public=True)
@@ -59,6 +59,18 @@ class UserViewSet(mixins.RetrieveModelMixin,
     queryset = get_user_model().objects.all()
     serializer_class = UserRetrieveSerializer
     permission_classes = (IsAuthenticated,)
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        if self.action == 'list' and 'search' in self.request.query_params:
+            search = self.request.query_params['search']
+            queryset = self.queryset.annotate(
+                username_distance=TrigramDistance('username', search),
+            )
+            queryset = queryset.filter((Q(username_distance__lte=0.99)))
+            queryset = queryset.order_by('username_distance')
+            return queryset
+        return self.queryset
 
 
 class ContributorViewSet(viewsets.ModelViewSet):

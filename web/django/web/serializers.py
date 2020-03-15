@@ -24,12 +24,6 @@ class UserRetrieveSerializer(serializers.HyperlinkedModelSerializer):
         read_only_fields = fields
 
 
-class ContributorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Contributor
-        fields = ('user_id', 'agent_id')
-
-
 class ContributorViaAgentSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Contributor
@@ -65,3 +59,14 @@ class AgentRetrieveSerializer(serializers.HyperlinkedModelSerializer):
 
     history = HistoricalRecordField(read_only=True)
     contributors = ContributorViaAgentSerializer(many=True)
+
+
+class ContributorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contributor
+        fields = ('id', 'user_id', 'agent_id', 'user', 'agent')
+
+    agent_id = serializers.IntegerField(write_only=True)
+    agent = AgentRetrieveSerializer(read_only=True)
+    user_id = serializers.IntegerField(write_only=True)
+    user = UserRetrieveSerializer(read_only=True)
