@@ -30,6 +30,7 @@ export default class AgentDetail extends Component {
     super(props);
     this.state = {
       agent: null,
+      author: null,
       users: {},
       historyPageSize: 10,
       historyPageCount: 0,
@@ -80,7 +81,10 @@ export default class AgentDetail extends Component {
         });
 
         fetchUsers(userIDs, users => {
-          this.setState({users: users});
+          this.setState({
+            users: users,
+            author: users[agent.author],
+          });
         });
       });
     });
@@ -424,7 +428,7 @@ export default class AgentDetail extends Component {
     <div>
       <Header as="h2" color="teal" textAlign="center">
         <img src={logo} alt="logo" className="image"/>{" "}
-        {this.state.agent.name}
+        {this.state.author?.username + ' / ' + this.state.agent.name}
       </Header>
       <Grid style={{marginBottom: '32px'}}>
         <Grid.Column className='eleven wide'>
