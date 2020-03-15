@@ -1,5 +1,5 @@
 import React, {Component} from "react";
-import TopMenu from "../TopMenu";
+import TopMenu from "../components/TopMenu";
 import {
   Breadcrumb,
   Button,
@@ -19,7 +19,7 @@ import {
 } from "semantic-ui-react";
 import Footer from "../Footer";
 import logo from "../icon.svg";
-import {BASE_URL, ensureSignedIn, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
+import {BASE_URL, ensureSignedIn, fetchMe, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
 import Moment from 'moment';
 import {SemanticToastContainer, toast} from "react-semantic-toasts";
 import DeleteAgentModal from "../components/DeleteAgentModal";
@@ -45,6 +45,7 @@ export default class AgentDetail extends Component {
   componentDidMount = () => {
     ensureSignedIn();
     this.fetchAgent();
+    fetchMe(me => this.setState({me}));
   };
 
   fetchAgent = () => {
@@ -78,14 +79,12 @@ export default class AgentDetail extends Component {
           historyPageCount: Math.ceil(agent.history.length / this.state.historyPageSize),
         });
 
-        console.log(agent);
-
-        let userURIs = [agent.author];
+        let userIDs = [agent.author];
         agent.history.forEach(h => {
-          userURIs.push(BASE_URL + '/api/auth/users/' + h.history_user_id + '/');
+          userIDs.push(h.history_user_id);
         });
 
-        fetchUsers(userURIs, users => {
+        fetchUsers(userIDs, users => {
           this.setState({users: users});
         });
       });
@@ -193,90 +192,108 @@ export default class AgentDetail extends Component {
     });
   };
 
-  editNameModal = () => (
-    <Modal open={this.state.editingName}
-           trigger={
-             <Button
-               fluid
-               style={{marginTop: '5px'}}
-               icon='tag'
-               content='Edit Name'
-               onClick={() => this.setState({editingName: true})}
-             />
-           }
-           basic
-           size='small'>
-      <Header icon='tag' content='Editing Agent Name'/>
-      <Modal.Content>
-        <Form.Input
-          fluid
-          required
-          icon="tag"
-          iconPosition="left"
-          placeholder="Name"
-          defaultValue={this.state.agent.name}
-          onChange={event => this.setState({
-            agent: {...this.state.agent, name: event.target.value}
-          })}
-        />
-      </Modal.Content>
-      <Modal.Actions>
-        <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
-          <Icon name='remove'/> Cancel
-        </Button>
-        <Button
-          color='green'
-          inverted
-          disabled={this.state.agent.name === ''}
-          onClick={() => this.editAgent('name')}
-        >
-          <Icon name='checkmark'/> Submit
-        </Button>
-      </Modal.Actions>
-    </Modal>
-  );
+  isContributor = () => {
+    if (this.state.me === undefined) return false;
+    if (this.state.me.id === this.state.agent.author) return true;
+    let isContributor = false;
+    this.state.agent.contributors.forEach(contributor => {
+      if (contributor.user === this.state.me.id) {
+        isContributor = true;
+      }
+    });
+    return isContributor;
+  };
 
-  editDescriptionModal = () => (
-    <Modal open={this.state.editingDescription}
-           trigger={
-             <Button
-               fluid
-               style={{marginTop: '5px'}}
-               icon='pencil'
-               content='Edit Description'
-               onClick={() => this.setState({editingDescription: true})}
-             />
-           }
-           basic
-           size='small'>
-      <Header icon='pencil' content='Editing Agent Description'/>
-      <Modal.Content>
-        <Form.TextArea
-          style={{width: '100%'}}
-          rows={10}
-          required
-          placeholder="Description"
-          defaultValue={this.state.agent.description}
-          onChange={event => this.setState({
-            agent: {...this.state.agent, description: event.target.value}
-          })}
-        />
-      </Modal.Content>
-      <Modal.Actions>
-        <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
-          <Icon name='remove'/> Cancel
-        </Button>
-        <Button
-          color='green'
-          inverted
-          disabled={this.state.agent.description === ''}
-          onClick={() => this.editAgent('description')}
-        >
-          <Icon name='checkmark'/> Submit
-        </Button>
-      </Modal.Actions>
-    </Modal>
-  );
+  editNameModal = () => {
+    if (!this.isContributor()) return null;
+    return (
+      <Modal open={this.state.editingName}
+             trigger={
+               <Button
+                 fluid
+                 style={{marginTop: '5px'}}
+                 icon='tag'
+                 content='Edit Name'
+                 onClick={() => this.setState({editingName: true})}
+               />
+             }
+             basic
+             size='small'>
+        <Header icon='tag' content='Editing Agent Name'/>
+        <Modal.Content>
+          <Form.Input
+            fluid
+            required
+            icon="tag"
+            iconPosition="left"
+            placeholder="Name"
+            defaultValue={this.state.agent.name}
+            onChange={event => this.setState({
+              agent: {...this.state.agent, name: event.target.value}
+            })}
+          />
+        </Modal.Content>
+        <Modal.Actions>
+          <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
+            <Icon name='remove'/> Cancel
+          </Button>
+          <Button
+            color='green'
+            inverted
+            disabled={this.state.agent.name === ''}
+            onClick={() => this.editAgent('name')}
+          >
+            <Icon name='checkmark'/> Submit
+          </Button>
+        </Modal.Actions>
+      </Modal>
+    )
+  };
+
+  editDescriptionModal = () => {
+    if (!this.isContributor()) return null;
+    return (
+      <Modal open={this.state.editingDescription}
+             trigger={
+               <Button
+                 fluid
+                 style={{marginTop: '5px'}}
+                 icon='pencil'
+                 content='Edit Description'
+                 onClick={() => this.setState({editingDescription: true})}
+               />
+             }
+             basic
+             size='small'>
+        <Header icon='pencil' content='Editing Agent Description'/>
+        <Modal.Content>
+          <Form.TextArea
+            style={{width: '100%'}}
+            rows={10}
+            required
+            placeholder="Description"
+            defaultValue={this.state.agent.description}
+            onChange={event => this.setState({
+              agent: {...this.state.agent, description: event.target.value}
+            })}
+          />
+        </Modal.Content>
+        <Modal.Actions>
+          <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
+            <Icon name='remove'/> Cancel
+          </Button>
+          <Button
+            color='green'
+            inverted
+            disabled={this.state.agent.description === ''}
+            onClick={() => this.editAgent('description')}
+          >
+            <Icon name='checkmark'/> Submit
+          </Button>
+        </Modal.Actions>
+      </Modal>
+    )
+  };
 
   updateParameters = () => {
     if (!hasJWT() || this.state.agentParametersFileUpload === null) {
@@ -333,61 +350,64 @@ export default class AgentDetail extends Component {
     this.setState({agentParametersFileUpload: file});
   };
 
-  updateParametersModal = () => (
-    <Modal open={this.state.updatingModal}
-           trigger={
-             <Button
-               fluid
-               style={{marginTop: '5px'}}
-               color='yellow'
-               icon='cog'
-               content='Update Model'
-               onClick={() => this.setState({updatingModal: true})}
-             />
-           }
-           basic
-           size='small'>
-      <Header icon='upload' content='Update Agent Modal'/>
-      <Modal.Content>
-        <Popup
-          flowing
-          position='right center'
-          trigger={
-            <Button
-              content={this.state.agentParametersFileUpload === null ? "Choose File" : this.state.agentParametersFileUpload.name}
-              labelPosition="left"
-              icon="file"
-              color='green'
-              onClick={() => this.fileInputRef.current.click()}
-            />
-          }>
-          Find your agent parameter files
-          under: <br/><code>/home/&lt;username&gt;/.agents/&lt;name&gt;-&lt;timestamp&gt;.tar.gz</code>
-        </Popup>
-        <input
-          ref={this.fileInputRef}
-          type="file"
-          hidden
-          onChange={(event) => {
-            this.agentFileChange(this.fileInputRef);
-          }}
-        />
-      </Modal.Content>
-      <Modal.Actions>
-        <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
-          <Icon name='remove'/> Cancel
-        </Button>
-        <Button
-          color='green'
-          inverted
-          disabled={this.state.agentParametersFileUpload === null}
-          onClick={() => this.updateParameters()}
-        >
-          <Icon name='checkmark'/> Upload
-        </Button>
-      </Modal.Actions>
-    </Modal>
-  );
+  updateParametersModal = () => {
+    if (!this.isContributor()) return null;
+    return (
+      <Modal open={this.state.updatingModal}
+             trigger={
+               <Button
+                 fluid
+                 style={{marginTop: '5px'}}
+                 color='yellow'
+                 icon='cog'
+                 content='Update Model'
+                 onClick={() => this.setState({updatingModal: true})}
+               />
+             }
+             basic
+             size='small'>
+        <Header icon='upload' content='Update Agent Modal'/>
+        <Modal.Content>
+          <Popup
+            flowing
+            position='right center'
+            trigger={
+              <Button
+                content={this.state.agentParametersFileUpload === null ? "Choose File" : this.state.agentParametersFileUpload.name}
+                labelPosition="left"
+                icon="file"
+                color='green'
+                onClick={() => this.fileInputRef.current.click()}
+              />
+            }>
+            Find your agent parameter files
+            under: <br/><code>/home/&lt;username&gt;/.agents/&lt;name&gt;-&lt;timestamp&gt;.tar.gz</code>
+          </Popup>
+          <input
+            ref={this.fileInputRef}
+            type="file"
+            hidden
+            onChange={(event) => {
+              this.agentFileChange(this.fileInputRef);
+            }}
+          />
+        </Modal.Content>
+        <Modal.Actions>
+          <Button basic color='grey' inverted onClick={() => this.closeEditWindow()}>
+            <Icon name='remove'/> Cancel
+          </Button>
+          <Button
+            color='green'
+            inverted
+            disabled={this.state.agentParametersFileUpload === null}
+            onClick={() => this.updateParameters()}
+          >
+            <Icon name='checkmark'/> Upload
+          </Button>
+        </Modal.Actions>
+      </Modal>
+    )
+  };
 
   descriptionLines = () => {
     let lines = [];
@@ -460,9 +480,9 @@ export default class AgentDetail extends Component {
             {this.editNameModal()}
             {this.editDescriptionModal()}
             {this.updateParametersModal()}
-            <DeleteAgentModal agent={this.state.agent}/>
+            <DeleteAgentModal me={this.state.me} agent={this.state.agent}/>
             {this.publicizeButton()}
-            <AgentContributorsModal agent={this.state.agent}/>
+            <AgentContributorsModal me={this.state.me} agent={this.state.agent}/>
           </Segment>
         </Grid.Column>
       </Grid>
@@ -477,6 +497,10 @@ export default class AgentDetail extends Component {
   };
 
   publicizeButton() {
+    if (this.state.me === undefined || this.state.me.id !== this.state.agent.author) {
+      return null;
+    }
+
     if (this.state.agent.public) {
       return (
         <Button onClick={this.changePublicStatus} animated color='green' fluid style={{marginTop: '5px'}}>
@@ -496,7 +520,7 @@ export default class AgentDetail extends Component {
 
   render = () => (
     <div className="SitePage">
-      <TopMenu/>
+      <TopMenu me={this.state.me}/>
       <SemanticToastContainer position='bottom-right'/>
       <Container className="SiteContents" style={{marginTop: '80px'}}>
         {this.state.agent !== null ? this.agentContent() : (

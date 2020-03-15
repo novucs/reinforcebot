@@ -7,6 +7,7 @@ class ContributorList extends Component {
   // props:
   // contributors: List[User]
   // onDelete(contributor)
+  // agent: Agent
 
   render = () => {
     if (this.props.contributors.length === 0) {
@@ -22,9 +23,14 @@ class ContributorList extends Component {
       let user = contributor.user;
       contributors.push((
         <List.Item key={user.id}>
-          <Button basic negative icon='cancel' onClick={() => this.props.onDelete(contributor)} size='mini'/>
-          {' '}
-          {user.username + ' (' + user.first_name + ' ' + user.last_name + ')'}
+          <Grid columns={2}>
+            <Grid.Column>
+              {user.username + ' (' + user.first_name + ' ' + user.last_name + ')'}
+            </Grid.Column>
+            <Grid.Column>
+              {this.deleteButton(contributor)}
+            </Grid.Column>
+          </Grid>
         </List.Item>
       ));
     });
@@ -35,12 +41,28 @@ class ContributorList extends Component {
       </List>
     );
   };
+
+  deleteButton(contributor) {
+    let canDelete = false;
+    if (this.props.me !== undefined) {
+      canDelete = this.props.me.id === contributor.user.id ||
+        this.props.agent.author === this.props.me.id;
+    }
+    return (
+      <span>
+        <Button disabled={!canDelete} basic negative icon='cancel' onClick={() => this.props.onDelete(contributor)}
+                size='mini'/>
+        {' '}
+      </span>
+    );
+  }
 }
 
 export default class AgentContributorsModal extends Component {
   constructor(props) {
     // props:
-    // agent
+    // me: User
+    // agent: Agent
     super(props);
     this.state = {
       modalOpen: false,
@@ -208,23 +230,7 @@ export default class AgentContributorsModal extends Component {
              size='small'>
         <Header icon='group' content='Contributors'/>
         <Modal.Content>
-          <Grid columns={2}>
-            <Grid.Column>
-              <p>Search for contributors to add to this project.</p>
-              <Search
-                loading={this.state.isLoading}
-                onResultSelect={this.handleUserResultSelect}
-                onSearchChange={this.handleUserSearchChange}
-                results={this.state.usersSearchResult}
-              />
-            </Grid.Column>
-            <Grid.Column>
-              <ContributorList
-                contributors={this.state.contributors}
-                onDelete={contributor => this.removeContributor(contributor)}
-              />
-            </Grid.Column>
-          </Grid>
+          {this.modalContents()}
         </Modal.Content>
         <Modal.Actions>
           <Button color='green' inverted onClick={() => this.setState({modalOpen: false})}>
@@ -234,4 +240,38 @@ export default class AgentContributorsModal extends Component {
       </Modal>
     );
   };
+
+  modalContents() {
+    if (this.props.me === undefined || this.props.me.id !== this.props.agent.author) {
+      return (
+        <ContributorList
+          agent={this.props.agent}
+          contributors={this.state.contributors}
+          onDelete={contributor => this.removeContributor(contributor)}
+          me={this.props.me}
+        />
+      );
+    }
+    return (
+      <Grid columns={2}>
+        <Grid.Column>
+          <p>Search for contributors to add to this project.</p>
+          <Search
+            loading={this.state.isLoading}
+            onResultSelect={this.handleUserResultSelect}
+            onSearchChange={this.handleUserSearchChange}
+            results={this.state.usersSearchResult}
+          />
+        </Grid.Column>
+        <Grid.Column>
+          <ContributorList
+            agent={this.props.agent}
+            contributors={this.state.contributors}
+            onDelete={contributor => this.removeContributor(contributor)}
+            me={this.props.me}
+          />
+        </Grid.Column>
+      </Grid>
+    );
+  }
 }

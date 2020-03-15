@@ -5,6 +5,7 @@ import {deleteAgent} from "../Util";
 export default class DeleteAgentModal extends Component {
   constructor(props) {
     // props:
+    // me: User
     // agent: Agent
     // small: boolean
     super(props);
@@ -35,6 +36,10 @@ export default class DeleteAgentModal extends Component {
   }
 
   render = () => {
+    if (this.props.me === undefined || this.props.me.id !== this.props.agent.author) {
+      return null;
+    }
+
     return (
       <Modal open={this.state.deleting}
              trigger={this.trigger()}

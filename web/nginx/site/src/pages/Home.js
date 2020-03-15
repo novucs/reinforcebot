@@ -4,13 +4,23 @@ import whiteLogo from "../white-logo.svg";
 import problemImg from "../problem.png";
 import solutionImg from "../solution.png";
 import Footer from "../Footer";
-import TopMenu from "../TopMenu";
+import TopMenu from "../components/TopMenu";
+import {fetchMe} from "../Util";
 
 
 export default class HomepageLayout extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {};
+  }
+
+  componentDidMount() {
+    fetchMe(me => this.setState({me}));
+  }
+
   render = () => (
     <div className="SitePage">
-      <TopMenu/>
+      <TopMenu me={this.state.me}/>
       <div className="SiteContents">
         <Segment
           inverted

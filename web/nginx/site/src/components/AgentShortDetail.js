@@ -5,6 +5,7 @@ import DeleteAgentModal from "./DeleteAgentModal";
 
 export default class AgentShortDetail extends Component {
   // props:
+  // me: User
   // author: User
   // agent: Agent
 
@@ -39,7 +40,7 @@ export default class AgentShortDetail extends Component {
         </Grid.Column>
         <Grid.Column>
           <div style={{textAlign: 'right'}}>
-            <DeleteAgentModal small agent={this.props.agent}/>
+            <DeleteAgentModal me={this.props.me} small agent={this.props.agent}/>
           </div>
         </Grid.Column>
       </Grid>

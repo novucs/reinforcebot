@@ -1,8 +1,8 @@
 import React from 'react';
-import TopMenu from "../TopMenu";
+import TopMenu from "../components/TopMenu";
 import {Container, Divider, Grid, Header, Input, Segment} from "semantic-ui-react";
 import Footer from "../Footer";
-import {BASE_URL, ensureSignedIn, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
+import {BASE_URL, ensureSignedIn, fetchMe, fetchUsers, getJWT, hasJWT, refreshJWT} from "../Util";
 import logo from "../icon.svg";
 import {SemanticToastContainer} from 'react-semantic-toasts';
 import AgentGrid from "../components/AgentGrid";
@@ -25,6 +25,7 @@ export default class Dashboard extends React.Component {
   componentDidMount = () => {
     ensureSignedIn();
     this.fetchAgents(1);
+    fetchMe(me => this.setState({me}));
   };
 
   fetchAgents = (page) => {
@@ -86,7 +87,7 @@ export default class Dashboard extends React.Component {
 
   render = () => (
     <div className='SitePage'>
-      <TopMenu/>
+      <TopMenu me={this.state.me}/>
       <SemanticToastContainer position='bottom-right'/>
       <Container className='SiteContents' style={{marginTop: '80px', marginBottom: '32px'}}>
         <Header as='h2' color='teal' textAlign='center'>
@@ -113,7 +114,7 @@ export default class Dashboard extends React.Component {
           <Divider vertical>Or</Divider>
         </Segment>
         {this.getPagination()}
-        <AgentGrid agents={this.state.agents} users={this.state.users}/>
+        <AgentGrid me={this.state.me} agents={this.state.agents} users={this.state.users}/>
         {this.getPagination()}
       </Container>
       < Footer/>

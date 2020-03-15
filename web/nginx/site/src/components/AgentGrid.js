@@ -4,6 +4,7 @@ import AgentShortDetail from "./AgentShortDetail";
 
 export default class AgentGrid extends Component {
   // props:
+  // me: User
   // users: Object[str, User]
   // agents: List[Agent]
 
@@ -16,7 +17,7 @@ export default class AgentGrid extends Component {
       let author = this.props.users[agent.author];
       components.push((
         <Grid.Column key={agent.id} className='sixteen wide'>
-          <AgentShortDetail agent={agent} author={author}/>
+          <AgentShortDetail me={this.props.me} agent={agent} author={author}/>
         </Grid.Column>
       ));
     });

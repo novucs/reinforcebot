@@ -1,8 +1,8 @@
 import React from 'react';
-import {ensureSignedOut, signIn} from '../Util';
+import {ensureSignedOut, fetchMe, signIn} from '../Util';
 import {Button, Form, Grid, Header, Message, Segment} from "semantic-ui-react";
 import logo from '../icon.svg'
-import TopMenu from "../TopMenu";
+import TopMenu from "../components/TopMenu";
 import Footer from "../Footer";
 
 export default class SignIn extends React.Component {
@@ -34,11 +34,12 @@ export default class SignIn extends React.Component {
 
   componentDidMount = () => {
     ensureSignedOut();
+    fetchMe(me => this.setState({me}));
   };
 
   render = () => (
     <div className='SitePage'>
-      <TopMenu/>
+      <TopMenu me={this.state.me}/>
       <Grid textAlign='center' style={{marginTop: '32px', marginBottom: '32px'}} className='SiteContents'
             verticalAlign='middle'>
         <Grid.Column style={{maxWidth: 450}}>

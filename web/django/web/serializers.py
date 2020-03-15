@@ -17,20 +17,20 @@ class HistoricalRecordField(serializers.ListField):
         return super().to_representation(data.values())
 
 
-class UserRetrieveSerializer(serializers.HyperlinkedModelSerializer):
+class UserRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ('id', 'first_name', 'last_name', 'email', 'username')
         read_only_fields = fields
 
 
-class ContributorViaAgentSerializer(serializers.HyperlinkedModelSerializer):
+class ContributorViaAgentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contributor
         fields = ('user',)
 
 
-class AgentSerializer(serializers.HyperlinkedModelSerializer):
+class AgentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Agent
         fields = ('id', 'name', 'description', 'public', 'parameters', 'author', 'changeReason')
@@ -51,7 +51,7 @@ class AgentSerializer(serializers.HyperlinkedModelSerializer):
         return instance
 
 
-class AgentRetrieveSerializer(serializers.HyperlinkedModelSerializer):
+class AgentRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Agent
         fields = ('id', 'name', 'description', 'public', 'parameters', 'author', 'history', 'contributors')

@@ -96,18 +96,11 @@ export function refreshJWT() {
 }
 
 
-export function fetchUsers(userURIs, callback) {
+export function fetchUsers(userIDs, callback) {
   if (!hasJWT()) {
     signOut();
     return;
   }
-
-  let userIDs = new Set();
-  userURIs.forEach(userURI => {
-    let id = userURI.replace(/\/$/, "");
-    id = id.substring(id.lastIndexOf('/') + 1);
-    userIDs.add(id);
-  });
 
   let users = {};
   userIDs.forEach(userID => {
@@ -134,8 +127,6 @@ export function fetchUsers(userURIs, callback) {
 
       response.json().then(body => {
         users[userID] = body;
-        users[userURI] = body;
-        users[BASE_URL + '/api/auth/users/' + userID + '/'] = body;
         callback(users);
       });
     });
@@ -192,6 +183,37 @@ export function createAgent(name, description, parametersFile, callback) {
     }
 
     callback();
+  });
+}
+
+export function fetchMe(callback) {
+  if (!hasJWT()) {
+    return;
+  }
+
+  fetch(BASE_URL + '/api/auth/users/me/', {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'JWT ' + getJWT(),
+    },
+  }).then(response => {
+    if (response.status === 401) {
+      refreshJWT();
+      return;
+    }
+
+    if (response.status !== 200) {
+      response.text().then(body => {
+        console.error("Unable to get personal details: ", body);
+      });
+      return;
+    }
+
+    response.json().then(body => {
+      callback(body);
+    });
   });
 }
 
