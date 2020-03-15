@@ -69,17 +69,6 @@ export default class Agents extends React.Component {
     });
   };
 
-  getPagination = () => {
-    return (
-      <RESTPagination
-        itemCount={this.state.agentCount}
-        pageSize={this.pageSize}
-        onPageChange={(page) => this.fetchAgents(page)}
-        hideIfOnePage
-      />
-    );
-  };
-
   render = () => (
     <div className='SitePage'>
       <TopMenu me={this.state.me}/>
@@ -108,9 +97,13 @@ export default class Agents extends React.Component {
           </Grid>
           <Divider vertical>Or</Divider>
         </Segment>
-        {this.getPagination()}
+        <RESTPagination
+          itemCount={this.state.agentCount}
+          pageSize={this.pageSize}
+          onPageChange={(page) => this.fetchAgents(page)}
+          hideIfOnePage
+        />
         <AgentGrid me={this.state.me} agents={this.state.agents} users={this.state.users}/>
-        {this.getPagination()}
       </Container>
       < Footer/>
     </div>
