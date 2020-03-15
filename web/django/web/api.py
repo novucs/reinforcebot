@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import TrigramDistance
+from django.core.exceptions import SuspiciousOperation
 from django.db.models import Q
 from rest_framework import mixins, viewsets
 from rest_framework.pagination import PageNumberPagination
@@ -28,6 +29,7 @@ class AgentViewSet(viewsets.ModelViewSet):
         if self.action in ('partial_update', 'update'):
             qs |= Q(contributors__user=self.request.user)
         if self.action in ('retrieve', 'list'):
+            qs |= Q(contributors__user=self.request.user)
             qs |= Q(public=True)
         if self.action == 'list' and 'search' in self.request.query_params:
             search = self.request.query_params['search']
@@ -41,8 +43,8 @@ class AgentViewSet(viewsets.ModelViewSet):
                 qs
             )
             queryset = queryset.order_by('name_distance', 'description_distance')
-            return queryset
-        return self.queryset.filter(qs)
+            return queryset.distinct()
+        return self.queryset.filter(qs).distinct()
 
     def get_serializer_class(self, *args, **kwargs):
         if self.action == 'retrieve':
@@ -53,9 +55,7 @@ class AgentViewSet(viewsets.ModelViewSet):
         serializer.save(author=serializer.context['request'].user)
 
 
-class UserViewSet(mixins.RetrieveModelMixin,
-                  mixins.ListModelMixin,
-                  viewsets.GenericViewSet):
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = get_user_model().objects.all()
     serializer_class = UserRetrieveSerializer
     permission_classes = (IsAuthenticated,)
@@ -81,6 +81,15 @@ class ContributorViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Q(agent__author=self.request.user)
-        if self.action in ('retrieve', 'destroy', 'list'):
+        if self.action == 'destroy':
             qs |= Q(user=self.request.user)
-        return self.queryset.filter(qs)
+        if self.action in ('retrieve', 'list'):
+            qs |= Q(user=self.request.user)
+            qs |= Q(agent__public=True)
+        return self.queryset.filter(qs).distinct()
+
+    def perform_create(self, serializer):
+        agent = Agent.objects.all().filter(id=self.request.data['agent_id']).first()
+        if agent.author_id != self.request.user.id:
+            raise SuspiciousOperation('Only agent authors may add contributors')
+        serializer.save()

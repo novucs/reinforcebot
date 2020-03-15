@@ -42,23 +42,13 @@ export default class AgentContributorsModal extends Component {
     // props:
     // agent
     super(props);
-    this.state = this.initialState();
-  }
-
-  initialState = () => {
-    return {
+    this.state = {
       modalOpen: false,
       contributors: [],
-      name: '',
-      description: '',
       usersSearchResult: [],
       isLoading: false,
     };
-  };
-
-  resetState = () => {
-    this.setState(this.initialState);
-  };
+  }
 
   componentDidMount = () => {
     fetch(BASE_URL + '/api/contributors/', {
@@ -237,7 +227,7 @@ export default class AgentContributorsModal extends Component {
           </Grid>
         </Modal.Content>
         <Modal.Actions>
-          <Button color='green' inverted onClick={() => this.resetState()}>
+          <Button color='green' inverted onClick={() => this.setState({modalOpen: false})}>
             <Icon name='check'/>{' '}Done
           </Button>
         </Modal.Actions>

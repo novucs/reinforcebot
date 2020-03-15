@@ -3,6 +3,8 @@ services:
   web:
     build: ./django
     command: python manage.py migrate && gunicorn web.wsgi:application --reload --bind 0.0.0.0:8000
+    stdin_open: true
+    tty: true
     volumes:
       - ./django:/usr/src/app/
       - static_data:/usr/src/app/static/
