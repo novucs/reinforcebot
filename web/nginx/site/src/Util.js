@@ -162,34 +162,6 @@ export function deleteAgent(id, callback) {
   });
 }
 
-export function createAgent(name, description, parametersFile, callback) {
-  let data = new FormData();
-  data.append('name', name);
-  data.append('description', description);
-  data.append('parameters', parametersFile);
-  data.append('changeReason', 'Initial creation');
-
-  fetch(BASE_URL + '/api/agents/', {
-    method: 'POST',
-    headers: {
-        ...getAuthorization(),
-    },
-    body: data,
-  }).then((response) => {
-    if (response.status === 401) {
-      refreshJWT();
-      return;
-    }
-
-    if (response.status !== 201) {
-      console.error('Failed to create an agent: ', response);
-      return;
-    }
-
-    callback();
-  });
-}
-
 export function fetchMe(callback) {
   if (!hasJWT()) {
     return;

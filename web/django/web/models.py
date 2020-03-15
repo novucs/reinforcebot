@@ -4,6 +4,9 @@ from simple_history.models import HistoricalRecords
 
 
 class Agent(models.Model):
+    class Meta:
+        unique_together = ('name', 'author_id')
+
     name = models.TextField()
     description = models.TextField()
     public = models.BooleanField(default=False)

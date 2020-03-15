@@ -1,7 +1,7 @@
 import React, {Component} from "react";
-import {createAgent} from "../Util";
+import {BASE_URL, getAuthorization, refreshJWT} from "../Util";
 import {toast} from "react-semantic-toasts";
-import {Button, Form, Header, Icon, List, Modal, Popup} from "semantic-ui-react";
+import {Button, Form, Header, Icon, List, Message, Modal, Popup} from "semantic-ui-react";
 
 export default class CreateAgentModal extends Component {
   constructor(props) {
@@ -26,7 +26,34 @@ export default class CreateAgentModal extends Component {
   };
 
   submit = () => {
-    createAgent(this.state.name, this.state.description, this.state.parametersFile, () => {
+    let data = new FormData();
+    data.append('name', this.state.name);
+    data.append('description', this.state.description);
+    data.append('parameters', this.state.parametersFile);
+    data.append('changeReason', 'Initial creation');
+
+    fetch(BASE_URL + '/api/agents/', {
+      method: 'POST',
+      headers: {
+        ...getAuthorization(),
+      },
+      body: data,
+    }).then((response) => {
+      if (response.status === 401) {
+        refreshJWT();
+        return;
+      }
+
+      if (response.status === 400) {
+        this.setState({error: 'You already have an agent by that name associated with your account'});
+        return;
+      }
+
+      if (response.status !== 201) {
+        console.error('Failed to create an agent: ', response);
+        return;
+      }
+
       this.resetState();
 
       toast(
@@ -142,6 +169,7 @@ export default class CreateAgentModal extends Component {
             hidden
             onChange={this.onFileChange}
           />
+          <Message error hidden={!this.state.error} content={this.state.error}/>
         </Modal.Content>
         <Modal.Actions>
           <Button basic color='grey' inverted onClick={() => this.resetState()}>

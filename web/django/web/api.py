@@ -1,10 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import TrigramDistance
-from django.core.exceptions import SuspiciousOperation
+from django.core.exceptions import SuspiciousOperation, ValidationError
+from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework import mixins, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import JSONParser, MultiPartParser
+from rest_framework.response import Response
 
 from web.models import Agent, Contributor
 from web.serializers import AgentRetrieveSerializer, AgentSerializer, ContributorSerializer, UserRetrieveSerializer
@@ -58,12 +60,18 @@ class AgentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:
             raise SuspiciousOperation('Unauthenticated users may not create agents')
-        serializer.save(author=serializer.context['request'].user)
+        try:
+            serializer.save(author=serializer.context['request'].user)
+        except IntegrityError as e:
+            raise SuspiciousOperation('You already have an agent by that name associated with your account')
 
     def perform_update(self, serializer):
         if 'public' in self.request.data and serializer.instance.author_id != self.request.user.id:
             raise SuspiciousOperation('Only agent authors may change the publication status')
-        serializer.save()
+        try:
+            serializer.save()
+        except IntegrityError as e:
+            raise SuspiciousOperation('You already have an agent by that name associated with your account')
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):

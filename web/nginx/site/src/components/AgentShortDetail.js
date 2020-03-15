@@ -15,7 +15,7 @@ export default class AgentShortDetail extends Component {
         Created by {this.props.author.username} ({this.props.author.first_name} {this.props.author.last_name})
       </Label>
       <br/>
-      <span><h1>{this.props.agent.name}</h1></span>
+      <span><h1>{this.props.author.username + ' / ' + this.props.agent.name}</h1></span>
       <br/>
       <span>{cropText(this.props.agent.description, 128)}</span>
       <br/>
