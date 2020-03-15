@@ -358,7 +358,6 @@ export default class AgentDetail extends Component {
                <Button
                  fluid
                  style={{marginTop: '5px'}}
-                 color='yellow'
                  icon='cog'
                  content='Update Model'
                  onClick={() => this.setState({updatingModal: true})}
@@ -474,8 +473,7 @@ export default class AgentDetail extends Component {
         </Grid.Column>
         <Grid.Column className='five wide'>
           <Segment>
-            <Header as='h4'>Options</Header>
-            <Divider/>
+            <Divider style={{marginTop: '0px'}} horizontal>Links</Divider>
             <Button
               fluid
               primary
@@ -484,12 +482,14 @@ export default class AgentDetail extends Component {
               icon='cloud download'
               content='Download'
             />
+            {this.isContributor() ? <Divider horizontal>Editing</Divider> : ''}
             {this.editNameModal()}
             {this.editDescriptionModal()}
             {this.updateParametersModal()}
             <DeleteAgentModal me={this.state.me} agent={this.state.agent}/>
-            {this.publicizeButton()}
+            <Divider horizontal>Access</Divider>
             <AgentContributorsModal me={this.state.me} agent={this.state.agent}/>
+            {this.publicizeButton()}
           </Segment>
         </Grid.Column>
       </Grid>

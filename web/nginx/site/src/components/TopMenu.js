@@ -28,6 +28,7 @@ class UserDropdown extends Component {
               ),
               disabled: true,
             },
+            {key: 'profile', text: 'Profile', icon: 'user', onClick: () => {window.location = '/profile'}},
             {key: 'sign-out', text: 'Sign Out', icon: 'sign out', onClick: signOut},
           ]}
         />

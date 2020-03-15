@@ -7,6 +7,7 @@ import Agents from "../pages/Agents";
 import Start from "../pages/Start";
 import AgentDetail from "../pages/AgentDetail";
 import SignUp from "../pages/SignUp";
+import Profile from "../pages/Profile";
 
 export default class Main extends React.Component {
   render = () => (
@@ -16,6 +17,7 @@ export default class Main extends React.Component {
       <Route exact path='/signup' component={SignUp}/>
       <Route exact path='/signin' component={SignIn}/>
       <Route exact path='/agents' component={Agents}/>
+      <Route exact path='/profile' component={Profile}/>
       <Route path='/agent/:id' component={AgentDetail}/>
     </Switch>
   );
