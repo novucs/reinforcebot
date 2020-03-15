@@ -142,6 +142,8 @@ class AgentLikesViewSet(mixins.CreateModelMixin,
         qs = Q(agent__public=True)
         if self.request.user.is_authenticated:
             qs |= Q(user=self.request.user)
+            qs |= Q(agent__author=self.request.user)
+            qs |= Q(agent__contributors__user=self.request.user)
         elif self.action not in ('retrieve', 'list'):
             raise SuspiciousOperation('Unauthenticated users may not edit likes')
 
