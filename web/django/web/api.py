@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import TrigramDistance
 from django.core.exceptions import SuspiciousOperation
 from django.db.models import Q
-from rest_framework import mixins, viewsets
+from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -54,6 +54,11 @@ class AgentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=serializer.context['request'].user)
 
+    def perform_update(self, serializer):
+        if 'public' in self.request.data and serializer.instance.author_id != self.request.user.id:
+            raise SuspiciousOperation('Only agent authors may change the publication status')
+        serializer.save()
+
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = get_user_model().objects.all()
@@ -85,6 +90,7 @@ class ContributorViewSet(viewsets.ModelViewSet):
             qs |= Q(user=self.request.user)
         if self.action in ('retrieve', 'list'):
             qs |= Q(user=self.request.user)
+            qs |= Q(agent__contributors__user=self.request.user)
             qs |= Q(agent__public=True)
         return self.queryset.filter(qs).distinct()
 
