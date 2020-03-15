@@ -15,13 +15,13 @@ export default class AgentGrid extends Component {
       }
       let author = this.props.users[agent.author];
       components.push((
-        <AgentShortDetail me={this.props.me} agent={agent} author={author}/>
+        <AgentShortDetail key={'agent-' + agent.id} me={this.props.me} agent={agent} author={author}/>
       ));
     });
     return (
-      <p style={{marginTop: '16px', marginBottom: '16px'}}>
+      <div style={{marginTop: '16px', marginBottom: '16px'}}>
         {components}
-      </p>
+      </div>
     );
   };
 }

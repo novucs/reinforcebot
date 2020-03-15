@@ -24,16 +24,16 @@ export default class AgentShortDetail extends Component {
   getLabels = () => {
     let labels = [];
     if (!this.props.agent.public) {
-      labels.push(<Label color='yellow'>Private</Label>);
+      labels.push(<Label key='private' color='yellow'>Private</Label>);
     }
     if (this.props.agent.public) {
-      labels.push(<Label color='green'>Public</Label>);
+      labels.push(<Label key='public' color='green'>Public</Label>);
     }
     if (this.props.me !== undefined && this.props.me.id === this.props.author.id) {
-      labels.push(<Label>You are the author</Label>);
+      labels.push(<Label key='author'>You are the author</Label>);
     }
     if (this.isContributor()) {
-      labels.push(<Label>You are a contributor</Label>);
+      labels.push(<Label key='contributor'>You are a contributor</Label>);
     }
 
     return (<span>{labels}</span>);
