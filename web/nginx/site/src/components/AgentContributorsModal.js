@@ -1,7 +1,7 @@
 import React, {Component} from "react";
 import {BASE_URL, getAuthorization, refreshJWT} from "../Util";
 import {toast} from "react-semantic-toasts";
-import {Button, Grid, Header, Icon, List, Modal, Search} from "semantic-ui-react";
+import {Button, Grid, Header, Icon, Label, Modal, Search} from "semantic-ui-react";
 
 class ContributorList extends Component {
   // props:
@@ -22,38 +22,41 @@ class ContributorList extends Component {
 
       let user = contributor.user;
       contributors.push((
-        <List.Item key={user.id}>
-          <Grid columns={2}>
-            <Grid.Column>
-              {user.username + ' (' + user.first_name + ' ' + user.last_name + ')'}
-            </Grid.Column>
-            <Grid.Column>
-              {this.deleteButton(contributor)}
-            </Grid.Column>
-          </Grid>
-        </List.Item>
+        <div key={user.id} style={{display: 'inline-block', margin: '1px'}}>
+          {this.contributorTag(contributor)}
+        </div>
       ));
     });
 
     return (
-      <List relaxed>
+      <div>
         {contributors}
-      </List>
+      </div>
     );
   };
 
-  deleteButton(contributor) {
+  contributorTag(contributor) {
     let canDelete = false;
     if (this.props.me !== undefined) {
       canDelete = this.props.me.id === contributor.user.id ||
         this.props.agent.author === this.props.me.id;
     }
 
-    if (!canDelete) return null;
+    let user = contributor.user;
+    if (!canDelete) {
+      return (
+        <Label as='a'>
+          {user.username + ' (' + user.first_name + ' ' + user.last_name + ')'}
+        </Label>
+      );
+    }
 
     return (
-      <Button basic negative icon='cancel' onClick={() => this.props.onDelete(contributor)}
-              size='mini'/>
+      <Label as='a' onClick={() => this.props.onDelete(contributor)}>
+        {user.username + ' (' + user.first_name + ' ' + user.last_name + ')'}
+        <Icon name='delete'/>
+      </Label>      // <Button basic negative icon='cancel' onClick={() => this.props.onDelete(contributor)}
+      //         size='mini'/>
     );
   }
 }
