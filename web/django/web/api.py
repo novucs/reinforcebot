@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import TrigramDistance
 from django.core.exceptions import SuspiciousOperation
 from django.db.models import Q
-from rest_framework import viewsets
+from rest_framework import mixins, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import JSONParser, MultiPartParser
 
@@ -56,6 +56,8 @@ class AgentViewSet(viewsets.ModelViewSet):
         return super(AgentViewSet, self).get_serializer_class()
 
     def perform_create(self, serializer):
+        if not self.request.user.is_authenticated:
+            raise SuspiciousOperation('Unauthenticated users may not create agents')
         serializer.save(author=serializer.context['request'].user)
 
     def perform_update(self, serializer):
@@ -81,7 +83,11 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         return self.queryset
 
 
-class ContributorViewSet(viewsets.ModelViewSet):
+class ContributorViewSet(mixins.CreateModelMixin,
+                         mixins.RetrieveModelMixin,
+                         mixins.DestroyModelMixin,
+                         mixins.ListModelMixin,
+                         viewsets.GenericViewSet):
     queryset = Contributor.objects.all()
     serializer_class = ContributorSerializer
     pagination_class = StandardResultsSetPagination
@@ -106,6 +112,8 @@ class ContributorViewSet(viewsets.ModelViewSet):
         return self.queryset.filter(qs).distinct().order_by('id')
 
     def perform_create(self, serializer):
+        if not self.request.user.is_authenticated:
+            raise SuspiciousOperation('Unauthenticated users may not add contributors')
         agent = Agent.objects.all().filter(id=self.request.data['agent_id']).first()
         if agent.author_id != self.request.user.id:
             raise SuspiciousOperation('Only agent authors may add contributors')

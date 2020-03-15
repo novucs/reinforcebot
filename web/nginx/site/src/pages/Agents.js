@@ -103,7 +103,7 @@ export default class Agents extends React.Component {
               />
             </Grid.Column>
             <Grid.Column>
-              <CreateAgentModal onCreate={() => this.fetchAgents(1)}/>
+              <CreateAgentModal me={this.state.me} onCreate={() => this.fetchAgents(1)}/>
             </Grid.Column>
           </Grid>
           <Divider vertical>Or</Divider>

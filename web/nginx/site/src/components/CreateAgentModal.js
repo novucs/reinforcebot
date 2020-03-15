@@ -76,13 +76,26 @@ export default class CreateAgentModal extends Component {
   };
 
   render = () => {
+    if (this.props.me === undefined) {
+      return (
+        <Button animated positive href='/signin'>
+          <Button.Content visible>
+            <Icon name='plus'/>{' '}Create a new agent
+          </Button.Content>
+          <Button.Content hidden>
+            <Icon name='sign-in'/>{' '}Sign in
+          </Button.Content>
+        </Button>
+      )
+    }
+
     return (
       <Modal open={this.state.creating}
              trigger={
                <Button icon positive onClick={() =>
                  this.setState({creating: true})
                }>
-                 <Icon name='plus'/>{} Create a new agent
+                 <Icon name='plus'/>{' '}Create a new agent
                </Button>
              }
              basic
