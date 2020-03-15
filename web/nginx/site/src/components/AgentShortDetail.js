@@ -2,6 +2,7 @@ import React, {Component} from "react";
 import {Button, Divider, Grid, Label, Segment} from "semantic-ui-react";
 import {cropText} from "../Util";
 import DeleteAgentModal from "./DeleteAgentModal";
+import AgentLikes from "./AgentLikes";
 
 export default class AgentShortDetail extends Component {
   // props:
@@ -75,6 +76,7 @@ export default class AgentShortDetail extends Component {
             content='Details'
             size='mini'
           />
+          <AgentLikes me={this.props.me} agent={this.props.agent} />
         </Grid.Column>
         <Grid.Column>
           <div style={{textAlign: 'right'}}>

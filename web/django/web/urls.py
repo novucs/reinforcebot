@@ -7,7 +7,7 @@ from rest_framework import permissions, routers
 
 from web import settings
 from web.api import AgentViewSet, ContributorViewSet, \
-    UserViewSet
+    UserViewSet, AgentLikesViewSet
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -23,6 +23,7 @@ router = routers.DefaultRouter()
 router.register(r'agents', AgentViewSet)
 router.register(r'users', UserViewSet)
 router.register(r'contributors', ContributorViewSet)
+router.register(r'agent-likes', AgentLikesViewSet)
 
 urlpatterns = [
     url(r'^api/', include(router.urls)),

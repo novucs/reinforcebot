@@ -3,7 +3,7 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from simple_history.utils import update_change_reason
 
-from web.models import Agent, Contributor
+from web.models import Agent, AgentLike, Contributor
 
 additional_user_fields = ('first_name', 'last_name')
 UserSerializer.Meta.fields += additional_user_fields
@@ -65,6 +65,17 @@ class AgentRetrieveSerializer(serializers.ModelSerializer):
 class ContributorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contributor
+        fields = ('id', 'user_id', 'agent_id', 'user', 'agent')
+
+    agent_id = serializers.IntegerField(write_only=True)
+    agent = AgentRetrieveSerializer(read_only=True)
+    user_id = serializers.IntegerField(write_only=True)
+    user = UserRetrieveSerializer(read_only=True)
+
+
+class AgentLikeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AgentLike
         fields = ('id', 'user_id', 'agent_id', 'user', 'agent')
 
     agent_id = serializers.IntegerField(write_only=True)

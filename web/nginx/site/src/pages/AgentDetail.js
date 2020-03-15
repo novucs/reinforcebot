@@ -24,6 +24,7 @@ import Moment from 'moment';
 import {SemanticToastContainer, toast} from "react-semantic-toasts";
 import DeleteAgentModal from "../components/DeleteAgentModal";
 import AgentContributorsModal from "../components/AgentContributorsModal";
+import AgentLikes from "../components/AgentLikes";
 
 export default class AgentDetail extends Component {
   constructor(props) {
@@ -45,7 +46,7 @@ export default class AgentDetail extends Component {
 
   componentDidMount = () => {
     this.fetchAgent();
-    fetchMe(me => this.setState({me}));
+    fetchMe(me => {this.setState({me})});
   };
 
   fetchAgent = () => {
@@ -433,10 +434,17 @@ export default class AgentDetail extends Component {
       <Grid style={{marginBottom: '32px'}}>
         <Grid.Column className='eleven wide'>
           <Segment textAlign='left'>
-            <Breadcrumb icon='right angle' sections={[
-              {key: 'Agents', content: 'Agents', href: '/agents'},
-              {key: this.state.agent?.name, content: this.state.agent?.name, active: true},
-            ]}/>
+            <Grid>
+              <Grid.Column width={12}>
+                <Breadcrumb icon='right angle' sections={[
+                  {key: 'Agents', content: 'Agents', href: '/agents'},
+                  {key: this.state.agent?.name, content: this.state.agent?.name, active: true},
+                ]}/>
+              </Grid.Column>
+              <Grid.Column width={4}>
+                <AgentLikes me={this.state.me} agent={this.state.agent}/>
+              </Grid.Column>
+            </Grid>
             <Divider/>
             <List className='large text'>
               {this.descriptionLines()}

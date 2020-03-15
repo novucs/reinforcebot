@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import TrigramDistance
-from django.core.exceptions import SuspiciousOperation, ValidationError
+from django.core.exceptions import SuspiciousOperation
 from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework import mixins, viewsets
@@ -8,8 +8,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.response import Response
 
-from web.models import Agent, Contributor
-from web.serializers import AgentRetrieveSerializer, AgentSerializer, ContributorSerializer, UserRetrieveSerializer
+from web.models import Agent, AgentLike, Contributor
+from web.serializers import AgentLikeSerializer, AgentRetrieveSerializer, AgentSerializer, ContributorSerializer, \
+    UserRetrieveSerializer
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -62,7 +63,7 @@ class AgentViewSet(viewsets.ModelViewSet):
             raise SuspiciousOperation('Unauthenticated users may not create agents')
         try:
             serializer.save(author=serializer.context['request'].user)
-        except IntegrityError as e:
+        except IntegrityError:
             raise SuspiciousOperation('You already have an agent by that name associated with your account')
 
     def perform_update(self, serializer):
@@ -70,7 +71,7 @@ class AgentViewSet(viewsets.ModelViewSet):
             raise SuspiciousOperation('Only agent authors may change the publication status')
         try:
             serializer.save()
-        except IntegrityError as e:
+        except IntegrityError:
             raise SuspiciousOperation('You already have an agent by that name associated with your account')
 
 
@@ -126,3 +127,44 @@ class ContributorViewSet(mixins.CreateModelMixin,
         if agent.author_id != self.request.user.id:
             raise SuspiciousOperation('Only agent authors may add contributors')
         serializer.save()
+
+
+class AgentLikesViewSet(mixins.CreateModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.DestroyModelMixin,
+                        mixins.ListModelMixin,
+                        viewsets.GenericViewSet):
+    queryset = AgentLike.objects.all()
+    serializer_class = AgentLikeSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        qs = Q(agent__public=True)
+        if self.request.user.is_authenticated:
+            qs |= Q(user=self.request.user)
+        elif self.action not in ('retrieve', 'list'):
+            raise SuspiciousOperation('Unauthenticated users may not edit likes')
+
+        if 'agent_id' in self.request.query_params:
+            qs &= Q(agent_id=self.request.query_params['agent_id'])
+
+        return self.queryset.filter(qs).distinct().order_by('id')
+
+    def list(self, request, *args, **kwargs):
+        if 'count' in self.request.query_params:
+            return Response({'count': self.get_queryset().count()})
+        if 'liked' in self.request.query_params:
+            liked = self.get_queryset().filter(user=self.request.user).first()
+            return Response({
+                'liked': liked is not None,
+                'like_id': -1 if liked is None else liked.id,
+            })
+        super(AgentLikesViewSet, self).retrieve(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        if not self.request.user.is_authenticated:
+            raise SuspiciousOperation('Unauthenticated users may not add likes')
+        try:
+            serializer.save()
+        except IntegrityError:
+            raise SuspiciousOperation('You have already liked this agent')
