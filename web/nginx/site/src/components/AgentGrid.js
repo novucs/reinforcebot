@@ -1,5 +1,4 @@
 import React, {Component} from "react";
-import {Grid} from "semantic-ui-react";
 import AgentShortDetail from "./AgentShortDetail";
 
 export default class AgentGrid extends Component {
@@ -16,15 +15,13 @@ export default class AgentGrid extends Component {
       }
       let author = this.props.users[agent.author];
       components.push((
-        <Grid.Column key={agent.id} className='sixteen wide'>
-          <AgentShortDetail me={this.props.me} agent={agent} author={author}/>
-        </Grid.Column>
+        <AgentShortDetail me={this.props.me} agent={agent} author={author}/>
       ));
     });
     return (
-      <Grid style={{marginTop: '16px', marginBottom: '16px'}}>
+      <p style={{marginTop: '16px', marginBottom: '16px'}}>
         {components}
-      </Grid>
+      </p>
     );
   };
 }

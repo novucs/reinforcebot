@@ -15,7 +15,7 @@ export default class DeleteAgentModal extends Component {
   trigger() {
     if (this.props.small) {
       return (
-        <Button icon onClick={() => {
+        <Button icon size='mini' onClick={() => {
           this.setState({deleting: true})
         }} color='red'>
           <Icon name='cancel'/>
