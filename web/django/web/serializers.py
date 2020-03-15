@@ -34,10 +34,10 @@ class AgentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Agent
         fields = ('id', 'name', 'description', 'public', 'parameters', 'author', 'changeReason', 'contributors')
-        read_only_fields = ('author',)
+        read_only_fields = ('author', 'contributors')
 
     changeReason = serializers.CharField(write_only=True)
-    contributors = ContributorViaAgentSerializer(many=True)
+    contributors = ContributorViaAgentSerializer(many=True, read_only=True)
 
     def create(self, validated_data):
         change_reason = validated_data.pop('changeReason', None)
