@@ -1,5 +1,5 @@
 import React, {Component} from "react";
-import {Button, Divider, Grid, Label, List, Segment} from "semantic-ui-react";
+import {Button, Divider, Grid, Label, Segment} from "semantic-ui-react";
 import {cropText} from "../Util";
 import DeleteAgentModal from "./DeleteAgentModal";
 
@@ -44,7 +44,11 @@ export default class AgentShortDetail extends Component {
       <span>
         <Grid>
           <Grid.Column width={10}>
-            <h3><a href={'/agent/' + this.props.agent.id}>{this.props.author.username + ' / ' + this.props.agent.name}</a></h3>
+            <h3>
+              <a href={'/agent/' + this.props.agent.id}>
+              {this.props.author.username + ' / ' + this.props.agent.name}
+              </a>
+            </h3>
           </Grid.Column>
           <Grid.Column textAlign='right' width={6}>
           {this.getLabels()}

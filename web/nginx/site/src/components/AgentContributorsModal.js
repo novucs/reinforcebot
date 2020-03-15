@@ -92,7 +92,6 @@ export default class AgentContributorsModal extends Component {
       }
 
       response.json().then(contributors => {
-        console.log(contributors);
         this.setState({contributors: contributors.results});
       })
     });
