@@ -1,5 +1,5 @@
 venv
 *.pyc
 .idea
-django/static
-django/media
+api/static
+api/media

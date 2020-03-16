@@ -1,15 +1,15 @@
 version: '3'
 services:
-  web:
-    build: ./django
+  api:
+    build: ./api
     command: python manage.py migrate && gunicorn web.wsgi:application --reload --bind 0.0.0.0:8000
     stdin_open: true
     tty: true
     volumes:
-      - ./django:/usr/src/app/
+      - ./api:/usr/src/app/
       - static_data:/usr/src/app/static/
     env_file:
-      - ./django/.env.dev
+      - ./api/.env.dev
     depends_on:
       - db
 
@@ -29,7 +29,7 @@ services:
     ports:
       - 8080:80
     depends_on:
-      - web
+      - api
 
 volumes:
   postgres_data:

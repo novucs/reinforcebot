@@ -15,12 +15,12 @@ stripe listen \
     --forward-to=http://localhost:8080/api/payments/
 ```
 
-Copy Stripe webhook secret into `./django/.env.dev -> STRIPE_WEBHOOK_SECRET`
+Copy Stripe webhook secret into `./api/.env.dev -> STRIPE_WEBHOOK_SECRET`
 
 ```
 docker-compose up -d
-docker-compose exec web python manage.py migrate
-docker-compose exec web python manage.py collectstatic --no-input
+docker-compose exec api python manage.py migrate
+docker-compose exec api python manage.py collectstatic --no-input
 ```
 
 Open in browser: http://localhost:8080/
