@@ -1,18 +1,5 @@
 version: '3'
 services:
-  api:
-    build: ./api
-    command: python manage.py migrate && gunicorn web.wsgi:application --reload --bind 0.0.0.0:8000
-    stdin_open: true
-    tty: true
-    volumes:
-      - ./api:/usr/src/app/
-      - static_data:/usr/src/app/static/
-    env_file:
-      - ./api/.env.dev
-    depends_on:
-      - db
-
   db:
     image: postgres:12.2-alpine
     volumes:
@@ -22,6 +9,28 @@ services:
       - POSTGRES_PASSWORD=pass
       - POSTGRES_DB=web
 
+  runner:
+    build: ./runner
+    command: gunicorn runner.wsgi:application --reload --bind 0.0.0.0:8000
+    volumes:
+      - ./runner:/usr/src/app/
+    env_file:
+      - ./runner/.env.dev
+
+  api:
+    build: ./api
+    command: gunicorn web.wsgi:application --reload --bind 0.0.0.0:8000
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./api:/usr/src/app/
+      - static_data:/usr/src/app/static/
+    env_file:
+      - ./api/.env.dev
+    depends_on:
+      - db
+      - runner
+
   nginx:
     build: ./nginx
     volumes:
@@ -30,6 +39,7 @@ services:
       - 8080:80
     depends_on:
       - api
+      - runner
 
 volumes:
   postgres_data:
