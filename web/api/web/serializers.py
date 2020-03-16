@@ -96,7 +96,7 @@ class PaymentIntentSerializer(serializers.ModelSerializer):
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = ('id', 'user_id', 'payment_reason' 'history')
+        fields = ('id', 'user_id', 'payment_reason', 'history')
         read_only_fields = ('user', 'payment_reason', 'history',)
 
     history = HistoricalRecordField(read_only=True)
