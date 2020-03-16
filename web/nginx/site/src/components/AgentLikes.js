@@ -166,7 +166,7 @@ export default class AgentLikes extends Component {
         this.createLike();
       }
     }}>
-      <Button color='teal' size='mini'>
+      <Button color={this.state.liked ? 'yellow' : 'teal'} size='mini'>
         <Icon name='thumbs up'/>
       </Button>
       <Label as='a' basic pointing='left'>
