@@ -1,10 +1,103 @@
 import React from 'react';
-import {BASE_URL, displayErrors, ensureSignedIn, fetchMe, getAuthorization} from '../Util';
-import {Button, Form, Grid, Header, Message, Segment} from "semantic-ui-react";
+import {BASE_URL, displayErrors, ensureSignedIn, fetchMe, getAuthorization, refreshJWT} from '../Util';
+import {Button, Container, Form, Grid, Header, Icon, Message, Segment} from "semantic-ui-react";
 import logo from "../icon.svg";
 import TopMenu from "../components/TopMenu";
 import Footer from "../Footer";
 import {SemanticToastContainer, toast} from "react-semantic-toasts";
+import {CardElement, ElementsConsumer} from "@stripe/react-stripe-js";
+
+
+class CheckoutForm extends React.Component {
+  // props:
+  // profile
+  // stripe
+  // elements
+  // onSuccess
+
+  handleSubmit = async (event) => {
+    event.preventDefault();
+    const {stripe, elements} = this.props;
+
+    let response = await fetch(BASE_URL + '/api/payment-intents/', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        ...getAuthorization(),
+      },
+      body: JSON.stringify({
+        payment_reason: 'COMPUTE_CREDITS',
+      }),
+    });
+
+    let body = await response.json();
+    let clientSecret = body['client_secret'];
+    console.log('client secret: ', clientSecret);
+
+    let result = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card: elements.getElement(CardElement),
+        billing_details: {
+          name: 'Jenny Rosen',
+        },
+      }
+    });
+
+    if (result.error) {
+      console.error('Error confirming payment: ', result.error.message);
+      toast(
+        {
+          type: 'error',
+          title: 'Error Confirming Payment',
+          description: <p>{result.error.message}</p>
+        },
+      );
+    } else if (result.paymentIntent.status === 'succeeded') {
+      toast(
+        {
+          type: 'success',
+          title: 'Success',
+          description: <p>You have successfully purchased 10 compute credits!</p>
+        },
+      );
+      this.props.onSuccess();
+    } else {
+      toast(
+        {
+          type: 'error',
+          title: 'Error Confirming Payment',
+          description: <p>An unknown error occurred</p>
+        },
+      );
+    }
+  };
+
+  render() {
+    const {stripe} = this.props;
+    return (
+      <div>
+        <Segment>
+          <h4>Buy Compute Credits</h4>
+          <p>You currently own <strong>{this.props.profile.compute_credits}</strong> compute credits.</p>
+          <p>1 compute credit = 1 hour of GPU compute</p>
+          <p style={{marginBottom: '24px'}}>Purchase 10 compute credits here for only £0.30</p>
+          <form onSubmit={this.handleSubmit}>
+            <CardElement/>
+            <Button style={{marginTop: '10px'}} fluid color='green' type="submit" disabled={!stripe}>
+              <Icon name='pound'/> Pay
+            </Button>
+          </form>
+        </Segment>
+        <Message info>
+          <p>This is currently integrating with Stripes sandbox API.</p>
+          <p>Enter any CVC and any future expiration date, with the following test card details:</p>
+          <p><strong>4000 0025 0000 3155</strong></p>
+        </Message>
+      </div>
+    );
+  }
+}
 
 export default class Profile extends React.Component {
   constructor(props) {
@@ -13,6 +106,7 @@ export default class Profile extends React.Component {
       me: {},
       password: null,
       errors: [],
+      profile: {},
     }
   }
 
@@ -83,81 +177,108 @@ export default class Profile extends React.Component {
 
   componentDidMount = () => {
     ensureSignedIn();
-    fetchMe(me => this.setState({me}));
+    fetchMe(me => {
+      this.setState({me});
+    });
+    this.fetchProfile();
   };
+
+  fetchProfile() {
+    fetch(BASE_URL + '/api/profiles/me/', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        ...getAuthorization(),
+      },
+    }).then(response => {
+      if (response.status === 401) {
+        refreshJWT();
+        return;
+      }
+
+      if (response.status !== 200) {
+        response.text().then(body => {
+          console.error("Unable to get profile: ", body);
+        });
+        return;
+      }
+
+      response.json().then(body => {
+        this.setState({profile: body});
+      });
+    });
+  }
 
   render = () => (
     <div className='SitePage'>
       <TopMenu me={this.state.me}/>
       <SemanticToastContainer position='bottom-right'/>
-      <Grid textAlign='center' style={{marginTop: '32px', marginBottom: '32px'}} className='SiteContents'
-            verticalAlign='middle'>
-        <Grid.Column style={{maxWidth: 450}}>
-          <Header as="h2" color="teal" textAlign="center">
-            <img src={logo} alt="logo" className="image"/>
-            {this.state.me?.username} / Profile
-          </Header>
-          <Form size="large">
-            <Segment stacked>
-              <Form.Input
-                fluid
-                defaultValue={this.state.me?.first_name}
-                placeholder="First name"
-                onKeyDown={this.keyPress}
-                onChange={event => this.setState({me: {...this.state.me, first_name: event.target.value}})}
-              />
-              <Form.Input
-                fluid
-                defaultValue={this.state.me?.last_name}
-                placeholder="Last name"
-                onKeyDown={this.keyPress}
-                onChange={event => this.setState({me: {...this.state.me, last_name: event.target.value}})}
-              />
-              <Form.Input
-                fluid
-                defaultValue={this.state.me?.email}
-                icon="envelope"
-                iconPosition="left"
-                placeholder="Email"
-                onKeyDown={this.keyPress}
-                onChange={event => this.setState({me: {...this.state.me, email: event.target.value}})}
-              />
-              <Form.Input
-                fluid
-                defaultValue={this.state.me?.username}
-                icon="user"
-                iconPosition="left"
-                placeholder="Username"
-                onKeyDown={this.keyPress}
-                onChange={event => this.setState({me: {...this.state.me, username: event.target.value}})}
-              />
-              <Form.Input
-                fluid
-                icon="lock"
-                iconPosition="left"
-                placeholder="Password"
-                type="password"
-                onKeyDown={this.keyPress}
-                onChange={event => this.setState({password: event.target.value})}
-              />
-              <Button
-                color="teal"
-                fluid size="large"
-                disabled={!this.ableToSubmit()}
-                onClick={this.submit}
-              >
-                Edit Details
-              </Button>
+      <Container style={{marginTop: '64px', marginBottom: '32px'}} className='SiteContents'>
+        <Header as="h2" color="teal" textAlign="center">
+          <img src={logo} alt="logo" className="image"/>
+          Your Profile
+        </Header>
+        <Grid>
+          <Grid.Column width={8}>
+            <ElementsConsumer>
+              {({stripe, elements}) => (
+                <CheckoutForm
+                  profile={this.state.profile}
+                  stripe={stripe}
+                  elements={elements}
+                  onSuccess={() => this.fetchProfile()}
+                />
+              )}
+            </ElementsConsumer>
+          </Grid.Column>
+          <Grid.Column width={8}>
+            <Segment>
+              <Form>
+                <Form.Input
+                  fluid
+                  defaultValue={this.state.me?.first_name}
+                  placeholder="First name"
+                  onKeyDown={this.keyPress}
+                  onChange={event => this.setState({me: {...this.state.me, first_name: event.target.value}})}
+                />
+                <Form.Input
+                  fluid
+                  defaultValue={this.state.me?.last_name}
+                  placeholder="Last name"
+                  onKeyDown={this.keyPress}
+                  onChange={event => this.setState({me: {...this.state.me, last_name: event.target.value}})}
+                />
+                <Form.Input
+                  fluid
+                  defaultValue={this.state.me?.email}
+                  icon="envelope"
+                  iconPosition="left"
+                  placeholder="Email"
+                  onKeyDown={this.keyPress}
+                  onChange={event => this.setState({me: {...this.state.me, email: event.target.value}})}
+                />
+                <Button
+                  color="teal"
+                  fluid size="large"
+                  disabled={!this.ableToSubmit()}
+                  onClick={this.submit}
+                >
+                  Save Details
+                </Button>
+              </Form>
             </Segment>
-          </Form>
-          <Message
-            error
-            header='Profile Change Unsuccessful'
-            list={this.state.errors}
-            hidden={this.state.errors.length === 0}
-          />
-        </Grid.Column>
-      </Grid>
+            <Message
+              error
+              header='Profile Change Unsuccessful'
+              list={this.state.errors}
+              hidden={this.state.errors.length === 0}
+            />
+          </Grid.Column>
+        </Grid>
+      </Container>
+      {/*  </Grid.Column>*/}
+      {/*</Grid>*/}
       <Footer/>
     </div>
   );

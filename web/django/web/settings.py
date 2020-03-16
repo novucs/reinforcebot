@@ -102,13 +102,13 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-   'AUTH_HEADER_TYPES': ('JWT',),
+    'AUTH_HEADER_TYPES': ('JWT',),
 }
 
 CORS_ORIGIN_WHITELIST = list(filter(None, os.environ.get("CORS_ORIGIN_WHITELIST", default="").split(" ")))
 
 SWAGGER_SETTINGS = {
-   'SECURITY_DEFINITIONS': {
+    'SECURITY_DEFINITIONS': {
         'JWT': {
             'type': 'apiKey',
             'name': 'Authorization',
@@ -116,3 +116,6 @@ SWAGGER_SETTINGS = {
         }
     }
 }
+
+STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")

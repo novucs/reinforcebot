@@ -17,21 +17,23 @@ class UserDropdown extends Component {
             <span>
               <Icon name='user'/> Hello, {this.props.me.username}
             </span>
-          )}
-          options={[
-            {
-              key: 'user',
-              text: (
-                <span>
-                  Signed in as <strong>{this.props.me.first_name} {this.props.me.last_name}</strong>
-                </span>
-              ),
-              disabled: true,
-            },
-            {key: 'profile', text: 'Profile', icon: 'user', onClick: () => {window.location = '/profile'}},
-            {key: 'sign-out', text: 'Sign Out', icon: 'sign out', onClick: signOut},
-          ]}
-        />
+          )}>
+          <Dropdown.Menu>
+            <Dropdown.Item disabled onClick={() => {window.location = '/profile'}}>
+              Signed in as
+              <strong>
+                {' ' + this.props.me?.first_name + ' ' + this.props.me?.last_name}
+              </strong>
+            </Dropdown.Item>
+            <Dropdown.Divider />
+            <Dropdown.Item onClick={() => {window.location = '/profile'}}>
+              Profile
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => {signOut()}}>
+              Sign out
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
       </div>
     );
   }

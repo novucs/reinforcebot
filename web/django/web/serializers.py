@@ -3,7 +3,7 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from simple_history.utils import update_change_reason
 
-from web.models import Agent, AgentLike, Contributor
+from web.models import Agent, AgentLike, Contributor, Payment, PaymentIntent, UserProfile
 
 additional_user_fields = ('first_name', 'last_name')
 UserSerializer.Meta.fields += additional_user_fields
@@ -81,4 +81,31 @@ class AgentLikeSerializer(serializers.ModelSerializer):
     agent_id = serializers.IntegerField(write_only=True)
     agent = AgentRetrieveSerializer(read_only=True)
     user_id = serializers.IntegerField(write_only=True)
+    user = UserRetrieveSerializer(read_only=True)
+
+
+class PaymentIntentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentIntent
+        fields = ('id', 'user_id', 'client_secret', 'payment_reason', 'history')
+        read_only_fields = ('user', 'client_secret', 'history')
+
+    history = HistoricalRecordField(read_only=True)
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ('id', 'user_id', 'payment_reason' 'history')
+        read_only_fields = ('user', 'payment_reason', 'history',)
+
+    history = HistoricalRecordField(read_only=True)
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ('id', 'user', 'compute_credits')
+        read_only_fields = ('user', 'compute_credits')
+
     user = UserRetrieveSerializer(read_only=True)

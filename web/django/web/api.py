@@ -1,16 +1,21 @@
+import stripe
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import TrigramDistance
 from django.core.exceptions import SuspiciousOperation
 from django.db import IntegrityError
 from django.db.models import Q
-from rest_framework import mixins, viewsets
+from django.http import HttpResponse
+from rest_framework import mixins, status, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.response import Response
 
-from web.models import Agent, AgentLike, Contributor
+from web.models import Agent, AgentLike, Contributor, Payment, PaymentIntent, UserProfile
 from web.serializers import AgentLikeSerializer, AgentRetrieveSerializer, AgentSerializer, ContributorSerializer, \
-    UserRetrieveSerializer
+    PaymentIntentSerializer, PaymentSerializer, UserProfileSerializer, UserRetrieveSerializer
+from web.settings import STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET
+
+stripe.api_key = STRIPE_API_KEY
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -170,3 +175,74 @@ class AgentLikesViewSet(mixins.CreateModelMixin,
             serializer.save()
         except IntegrityError:
             raise SuspiciousOperation('You have already liked this agent')
+
+
+class PaymentIntentViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    queryset = PaymentIntent.objects.all()
+    serializer_class = PaymentIntentSerializer
+
+    def create(self, request, *args, **kwargs):
+        intent = stripe.PaymentIntent.create(
+            amount=30,  # £0.30
+            currency='gbp',
+            metadata={'integration_check': 'accept_a_payment'},
+        )
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=self.request.user, client_secret=intent['client_secret'])
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class PaymentViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+
+    def create(self, request, *args, **kwargs):
+        payload = request.body
+        sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+
+        try:
+            event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+        except ValueError:
+            # Invalid payload
+            return HttpResponse(status=400)
+        except stripe.error.SignatureVerificationError:
+            # Invalid signature
+            return HttpResponse(status=400)
+
+        # Only supporting payment succeeded at the moment.
+        if event.type != 'payment_intent.succeeded':
+            return HttpResponse(status=400)
+
+        client_secret = event.data.object['client_secret']
+        payment_intent = PaymentIntent.objects.all().filter(client_secret=client_secret).get()
+        user = payment_intent.user
+        profile = user.profile
+
+        if not profile:
+            profile = UserProfile(user=user)
+
+        profile.compute_credits += 10
+        profile.save()
+
+        payment = Payment(user=user, payment_reason=payment_intent.payment_reason)
+        payment.save()
+
+        return HttpResponse(status=200)
+
+
+class ProfileViewSet(mixins.RetrieveModelMixin,
+                     viewsets.GenericViewSet):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        if self.kwargs['pk'] != 'me':
+            return super(ProfileViewSet, self).retrieve(request, *args, **kwargs)
+        instance = self.get_queryset().filter(user=self.request.user).first()
+        if instance is None:
+            instance = UserProfile(user=self.request.user)
+            instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
