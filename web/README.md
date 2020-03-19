@@ -24,3 +24,5 @@ docker-compose exec api python manage.py collectstatic --no-input
 ```
 
 Open in browser: http://localhost:8080/
+
+PyCharm users: Mark `runner` and `api` directories as source roots.
