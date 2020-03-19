@@ -1,4 +1,4 @@
-export const BASE_URL = 'http://reinforcebot.novucs.net';
+export const BASE_URL = '//reinforcebot.novucs.net';
 
 export function displayErrors(...errors) {
   return errors.flatMap((e) => displayError(e));
