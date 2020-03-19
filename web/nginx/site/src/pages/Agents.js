@@ -8,6 +8,7 @@ import {SemanticToastContainer} from 'react-semantic-toasts';
 import AgentGrid from "../components/AgentGrid";
 import CreateAgentModal from "../components/CreateAgentModal";
 import RESTPagination from "../components/RESTPagination";
+import _ from 'lodash'
 
 
 export default class Agents extends React.Component {
@@ -84,11 +85,11 @@ export default class Agents extends React.Component {
             <Grid.Column>
               <Input
                 placeholder='Search agents'
-                onChange={(event) => {
-                  this.setState({search: event.target.value}, () => {
+                onChange={_.debounce((event, {value}) => {
+                  this.setState({search: value}, () => {
                     this.fetchAgents(1);
                   });
-                }}
+                }, 200)}
               />
             </Grid.Column>
             <Grid.Column>

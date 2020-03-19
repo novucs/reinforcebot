@@ -2,6 +2,7 @@ import React, {Component} from "react";
 import {BASE_URL, getAuthorization, refreshJWT} from "../Util";
 import {toast} from "react-semantic-toasts";
 import {Button, Grid, Header, Icon, Label, Modal, Search} from "semantic-ui-react";
+import _ from 'lodash'
 
 class ContributorList extends Component {
   // props:
@@ -212,8 +213,8 @@ export default class AgentContributorsModal extends Component {
     this.addContributor(result);
   };
 
-  handleUserSearchChange = (event) => {
-    this.usersSearch(event.target.value);
+  handleUserSearchChange = (event, {value}) => {
+    this.usersSearch(value);
   };
 
   render = () => {
@@ -258,7 +259,8 @@ export default class AgentContributorsModal extends Component {
           <Search
             loading={this.state.isLoading}
             onResultSelect={this.handleUserResultSelect}
-            onSearchChange={this.handleUserSearchChange}
+            onSearchChange={_.debounce(this.handleUserSearchChange, 200)}
+            onChange={this.handleUserSearchChange}
             results={this.state.usersSearchResult}
           />
         </Grid.Column>
