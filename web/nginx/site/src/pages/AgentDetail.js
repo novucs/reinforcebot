@@ -25,6 +25,7 @@ import {SemanticToastContainer, toast} from "react-semantic-toasts";
 import DeleteAgentModal from "../components/DeleteAgentModal";
 import AgentContributorsModal from "../components/AgentContributorsModal";
 import AgentLikes from "../components/AgentLikes";
+import ReactMarkdown from "react-markdown";
 
 export default class AgentDetail extends Component {
   constructor(props) {
@@ -46,7 +47,9 @@ export default class AgentDetail extends Component {
 
   componentDidMount = () => {
     this.fetchAgent();
-    fetchMe(me => {this.setState({me})});
+    fetchMe(me => {
+      this.setState({me})
+    });
   };
 
   fetchAgent = () => {
@@ -408,18 +411,6 @@ export default class AgentDetail extends Component {
     )
   };
 
-  descriptionLines = () => {
-    let lines = [];
-    let i = 0;
-    this.state.agent.description.split('\n').forEach(line => {
-      i += 1;
-      lines.push((
-        <List.Item key={'line-' + i}>{line}</List.Item>
-      ))
-    });
-    return lines;
-  };
-
   setHistoryPage = (event, {activePage}) => {
     this.setState({currentHistoryPage: Math.ceil(activePage)});
   };
@@ -446,7 +437,7 @@ export default class AgentDetail extends Component {
             </Grid>
             <Divider/>
             <List className='large text'>
-              {this.descriptionLines()}
+              <ReactMarkdown source={this.state.agent?.description}/>
             </List>
           </Segment>
           <div style={{textAlign: 'left'}}>
