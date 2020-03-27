@@ -8,7 +8,7 @@ class Agent:
     def __init__(self, action_space):
         self.action_space = action_space
 
-    def act(self, observation, done):
+    def act(self, observation):
         return self.action_space.sample()
 
 
@@ -29,7 +29,7 @@ class ReplayBuffer:
         self.a[self.index] = a
         self.r[self.index] = r
         self.sp[self.index] = sp
-        self.index = (self.index + 1) % self.size
+        self.index = (self.index + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
     def read(self, batch_size=64):
@@ -50,15 +50,16 @@ def main():
     env = gym.make(args.env_id)
     env.seed(0)
     agent = Agent(env.action_space)
+    replay_buffer = ReplayBuffer(env.observation_space, env.action_space)
     episode_count = 100
-    done = False
     for i in range(episode_count):
-        ob = env.reset()
+        state = env.reset()
         while True:
             env.render()
-            action = agent.act(ob, done)
-            ob, reward, done, _ = env.step(action)
-            print(reward)
+            action = agent.act(state)
+            next_state, reward, done, _ = env.step(action)
+            replay_buffer.write(done, state, action, reward, next_state)
+            state = next_state
             if done:
                 # train
                 # s,a,r,s+t
