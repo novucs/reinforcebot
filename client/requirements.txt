@@ -8,6 +8,6 @@ pygubu==0.9.8.2
 gym==0.15.3
 gym[atari]==0.15.3
 pytesseract==0.3.0
-tensorflow-gpu==2.1.0
 pycairo==1.19.0
 PyGObject==3.34.0
+torch==1.4.0

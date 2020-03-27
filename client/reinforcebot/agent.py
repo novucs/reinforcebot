@@ -2,14 +2,9 @@ import argparse
 
 import gym
 import numpy as np
-
-
-class Agent:
-    def __init__(self, action_space):
-        self.action_space = action_space
-
-    def act(self, observation):
-        return self.action_space.sample()
+import torch
+import torch.nn.functional as F
+from torch import nn
 
 
 class ReplayBuffer:
@@ -43,13 +38,44 @@ class ReplayBuffer:
         )
 
 
+class Critic(nn.Module):
+    def __init__(self, in_dim):
+        super(Critic, self).__init__()
+        self.fc1 = nn.Linear(in_dim, 8)
+        self.fc2 = nn.Linear(8, 1)
+
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+
+class Agent:
+    def __init__(self, observation_space, action_space):
+        self.action_space = action_space
+        self.critic = Critic(2 + observation_space.shape[0])
+
+    def act(self, observation, epsilon=0.1):
+        if epsilon > np.random.rand():
+            return self.action_space.sample()
+
+        a1 = self.critic(torch.from_numpy(np.concatenate((np.array([1, 0]), observation))).float())
+        a2 = self.critic(torch.from_numpy(np.concatenate((np.array([0, 1]), observation))).float())
+        action = np.array([a1, a2]).argmax()
+        return action
+
+    def train(self, experience):
+        # Q(s,a)=Q(s,a)-a*(r+max_a(Q(st+1,a))-Q(s,a))
+        pass
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('env_id', nargs='?', default='CartPole-v0')
     args = parser.parse_args()
     env = gym.make(args.env_id)
     env.seed(0)
-    agent = Agent(env.action_space)
+    agent = Agent(env.observation_space, env.action_space)
     replay_buffer = ReplayBuffer(env.observation_space, env.action_space)
     episode_count = 100
     for i in range(episode_count):
@@ -61,9 +87,8 @@ def main():
             replay_buffer.write(done, state, action, reward, next_state)
             state = next_state
             if done:
-                # train
-                # s,a,r,s+t
-                # Q(s,a)=Q(s,a)-a*(r+max_a(Q(st+1,a))-Q(s,a))
+                experience = replay_buffer.read()
+                agent.train(experience)
                 break
     env.close()
 
