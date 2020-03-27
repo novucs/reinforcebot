@@ -247,7 +247,7 @@ def numbify(widget):
 
 if __name__ == '__main__':
     builder = Gtk.Builder()
-    builder.add_from_file("gtktest.glade")
+    builder.add_from_file("main.glade")
     window = builder.get_object("window1")
     window.set_title("reinforcebot")
     window.connect("destroy", Gtk.main_quit)
