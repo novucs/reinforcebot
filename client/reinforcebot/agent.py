@@ -72,8 +72,9 @@ class Agent:
         with torch.no_grad():
             a1 = self.critic(torch.from_numpy(np.c_[np.tile(np.eye(2)[0], (len(n), 1)), n]).float())
             a2 = self.critic(torch.from_numpy(np.c_[np.tile(np.eye(2)[1], (len(n), 1)), n]).float())
-            # TODO: if d == True: max a of any Q for st+1 = 0
-            labels = torch.from_numpy(r + gamma * np.max(np.c_[a1, a2], axis=1))
+            future_q = np.max(np.c_[a1, a2], axis=1)
+            future_q[d] = 0
+            labels = torch.from_numpy(r + gamma * future_q)
 
         self.critic_optimiser.zero_grad()
         outputs = self.critic(torch.from_numpy(np.c_[np.eye(2)[a], o]).float())
