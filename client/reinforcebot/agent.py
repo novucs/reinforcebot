@@ -13,7 +13,7 @@ def copy_params(origin, target, tau=1.0):
 
 
 class ReplayBuffer:
-    def __init__(self, observation_space, action_space, max_size=1024):
+    def __init__(self, observation_space, action_space, max_size=128000):
         self.o = np.empty((max_size, *observation_space.shape), dtype=np.float32)
         self.a = np.empty((max_size, *action_space.shape), dtype=np.int8)
         self.r = np.empty((max_size,), dtype=np.float32)
@@ -32,7 +32,7 @@ class ReplayBuffer:
         self.index = (self.index + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
-    def read(self, batch_size=64):
+    def read(self, batch_size=8192):
         indices = np.random.randint(0, self.size, size=batch_size)
         return (
             self.o[indices],
@@ -86,7 +86,7 @@ class Agent:
             a2 = self.critic_target(torch.from_numpy(np.c_[np.tile(np.eye(2)[1], (len(n), 1)), n]).float())
             future_q = np.max(np.c_[a1, a2], axis=1)
             # future_q[d] = 0
-            labels = torch.from_numpy(r + self.gamma * future_q)
+            labels = torch.reshape(torch.from_numpy(r + self.gamma * future_q), [len(a), 1])
 
         self.critic_optimiser.zero_grad()
         outputs = self.critic(torch.from_numpy(np.c_[np.eye(2)[a], o]).float())
@@ -105,13 +105,13 @@ def main():
     env._max_episode_steps = 2000
     agent = Agent(env.observation_space, env.action_space)
     replay_buffer = ReplayBuffer(env.observation_space, env.action_space)
-    episode_count = 1000
+    episode_count = 10000
     for i in range(episode_count):
         observation = env.reset()
         total_steps = 0
         while True:
             total_steps += 1
-            env.render()
+            # env.render()
             action = agent.act(observation)
             next_observation, reward, done, _ = env.step(action)
             reward = 0 if not done else -reward
