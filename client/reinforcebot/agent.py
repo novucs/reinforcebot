@@ -51,36 +51,47 @@ class Critic(nn.Module):
 
 
 class Agent:
-    def __init__(self, observation_space, action_space):
+    def __init__(self, observation_space, action_space,
+                 alpha=0.001, epsilon=0.1, epsilon_decay=1.0, gamma=0.99, tau=0.005):
         self.action_space = action_space
+        self.critic_target = Critic(2 + observation_space.shape[0])
         self.critic = Critic(2 + observation_space.shape[0])
         self.critic_criterion = nn.MSELoss()
-        self.critic_optimiser = optim.Adam(self.critic.parameters())
+        self.critic_optimiser = optim.Adam(self.critic.parameters(), lr=alpha)
+        self.epsilon = epsilon
+        self.epsilon_decay = epsilon_decay
+        self.gamma = gamma
+        self.tau = tau
 
     def act(self, observation, epsilon=0.1):
         if epsilon > np.random.rand():
             return self.action_space.sample()
 
-        a1 = self.critic(torch.from_numpy(np.concatenate((np.eye(2)[0], observation))).float())
-        a2 = self.critic(torch.from_numpy(np.concatenate((np.eye(2)[1], observation))).float())
+        a1 = self.critic_target(torch.from_numpy(np.concatenate((np.eye(2)[0], observation))).float())
+        a2 = self.critic_target(torch.from_numpy(np.concatenate((np.eye(2)[1], observation))).float())
         action = np.array([a1, a2]).argmax()
         return action
 
-    def train(self, experience, alpha=0.01, gamma=0.99):
+    def train(self, experience):
         # Q(s,a)=Q(s,a)-alpha*(r+gamma*max_a(Q(st+1,a))-Q(s,a))
         o, a, r, n, d = experience
         with torch.no_grad():
-            a1 = self.critic(torch.from_numpy(np.c_[np.tile(np.eye(2)[0], (len(n), 1)), n]).float())
-            a2 = self.critic(torch.from_numpy(np.c_[np.tile(np.eye(2)[1], (len(n), 1)), n]).float())
+            a1 = self.critic_target(torch.from_numpy(np.c_[np.tile(np.eye(2)[0], (len(n), 1)), n]).float())
+            a2 = self.critic_target(torch.from_numpy(np.c_[np.tile(np.eye(2)[1], (len(n), 1)), n]).float())
             future_q = np.max(np.c_[a1, a2], axis=1)
             future_q[d] = 0
-            labels = torch.from_numpy(r + gamma * future_q)
+            print(np.mean(future_q))
+            labels = torch.from_numpy(r + self.gamma * future_q)
 
         self.critic_optimiser.zero_grad()
         outputs = self.critic(torch.from_numpy(np.c_[np.eye(2)[a], o]).float())
         loss = self.critic_criterion(outputs, labels)
         loss.backward()
         self.critic_optimiser.step()
+        self.epsilon *= self.epsilon_decay
+
+        for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+            target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
 
 def main():
@@ -91,15 +102,16 @@ def main():
     env.seed(0)
     agent = Agent(env.observation_space, env.action_space)
     replay_buffer = ReplayBuffer(env.observation_space, env.action_space)
-    episode_count = 10000
+    episode_count = 500
     for i in range(episode_count):
         observation = env.reset()
         total_steps = 0
         while True:
             total_steps += 1
-            env.render()
+            # env.render()
             action = agent.act(observation)
             next_observation, reward, done, _ = env.step(action)
+            reward = reward if not done else -reward
             replay_buffer.write(observation, action, reward, next_observation, done)
             observation = next_observation
             if done:
