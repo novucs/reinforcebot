@@ -7,6 +7,11 @@ import torch.nn.functional as F
 from torch import nn, optim
 
 
+def copy_params(origin, target, tau=1.0):
+    for param, target_param in zip(origin.parameters(), target.parameters()):
+        target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+
+
 class ReplayBuffer:
     def __init__(self, observation_space, action_space, max_size=1024):
         self.o = np.empty((max_size, *observation_space.shape), dtype=np.float32)
@@ -58,6 +63,7 @@ class Agent:
         self.critic = Critic(2 + observation_space.shape[0])
         self.critic_criterion = nn.MSELoss()
         self.critic_optimiser = optim.Adam(self.critic.parameters(), lr=alpha)
+        copy_params(self.critic, self.critic_target)
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.gamma = gamma
@@ -79,8 +85,7 @@ class Agent:
             a1 = self.critic_target(torch.from_numpy(np.c_[np.tile(np.eye(2)[0], (len(n), 1)), n]).float())
             a2 = self.critic_target(torch.from_numpy(np.c_[np.tile(np.eye(2)[1], (len(n), 1)), n]).float())
             future_q = np.max(np.c_[a1, a2], axis=1)
-            future_q[d] = 0
-            print(np.mean(future_q))
+            # future_q[d] = 0
             labels = torch.from_numpy(r + self.gamma * future_q)
 
         self.critic_optimiser.zero_grad()
@@ -90,9 +95,6 @@ class Agent:
         self.critic_optimiser.step()
         self.epsilon *= self.epsilon_decay
 
-        for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-            target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -100,24 +102,27 @@ def main():
     args = parser.parse_args()
     env = gym.make(args.env_id)
     env.seed(0)
+    env._max_episode_steps = 2000
     agent = Agent(env.observation_space, env.action_space)
     replay_buffer = ReplayBuffer(env.observation_space, env.action_space)
-    episode_count = 500
+    episode_count = 1000
     for i in range(episode_count):
         observation = env.reset()
         total_steps = 0
         while True:
             total_steps += 1
-            # env.render()
+            env.render()
             action = agent.act(observation)
             next_observation, reward, done, _ = env.step(action)
-            reward = reward if not done else -reward
+            reward = 0 if not done else -reward
             replay_buffer.write(observation, action, reward, next_observation, done)
             observation = next_observation
             if done:
                 print(f'episode {i}, total steps: {total_steps}')
                 experience = replay_buffer.read()
                 agent.train(experience)
+                if i % 5:
+                    copy_params(agent.critic, agent.critic_target)
                 break
     env.close()
 
