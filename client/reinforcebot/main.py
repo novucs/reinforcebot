@@ -1,6 +1,5 @@
 import array
 import subprocess
-import tkinter as tk
 from datetime import datetime
 from tkinter import messagebox
 
@@ -9,10 +8,8 @@ import cv2
 import gi
 import mss
 import numpy as np
-import pytesseract
 from PIL import (
     Image,
-    # ImageTk,
     ImageChops,
 )
 from pynput import (
@@ -82,7 +79,6 @@ class App:
 
     def on_select_area_clicked(self):
         self.select_area_enabled = True
-        # self.capture(0, 0, 200, 200)
 
     def on_coordinates_change(self):
         ox, oy, ow, oh = self.current_coordinates
@@ -104,22 +100,8 @@ class App:
         ]
 
     def set_image(self, x, y, width, height):
-        def redraw(widget, context):
-            context.set_source_surface(self.image, 0, 0)
-            context.paint()
-            return False
-
-        # self.builder.get_object('preview').connect('draw', redraw)
-
         pixbuf = Gdk.pixbuf_get_from_surface(self.image, x, y, width, height)
         self.builder.get_object('preview').set_from_pixbuf(pixbuf)
-
-        # if self.image_on_canvas is None:
-        #     self.canvas.grid(row=0, column=3, rowspan=3)
-        #     self.image_on_canvas = self.canvas.create_image(
-        #         0, 0, anchor=tk.NW, image=self.image)
-        # else:
-        #     self.canvas.itemconfig(self.image_on_canvas, image=self.image)
 
     def capture_image(self, x, y, width, height, captured_at):
         if self.last_window_capture > captured_at:
@@ -133,42 +115,20 @@ class App:
                 return
 
         np_image = np.array(i, dtype=np.uint8)
-
-        # self.canvas.config(width=width, height=height)  # todo: idk if needed in update
-
-        # size = tuple(x // 2 for x in i.size)  # half the size of the displayed image
         size = tuple(x for x in i.size)  # half the size of the displayed image
         res = cv2.resize(np_image, dsize=size)
-        # inner_image = Image.frombytes("RGB", size, res, "raw", "BGRX")
         inner_image = Image.frombytes("RGBX", size, res, "raw", "RGBX")
-        # inner_image = Image.frombytes("RGBA", size, res)
         inner_image.thumbnail((256, 256))
-        byte_array = array.array('B', inner_image.tobytes())
         smaller_width, smaller_height = inner_image.size
-
-        # image_size = inner_image.size
         thumb = inner_image.crop((0, 0, smaller_width, smaller_height))
         offset_x = int(max((width - smaller_width) / 2, 0))
         offset_y = int(max((height - smaller_height) / 2, 0))
         thumb = ImageChops.offset(thumb, offset_x, offset_y)
         byte_array = array.array('B', thumb.tobytes())
-
-        # print(len(byte_array), inner_image.size)
-        # cairo_surface = cairo.ImageSurface.create_for_data(byte_array, cairo.FORMAT_ARGB32, width, height, width * 4)
         cairo_surface = cairo.ImageSurface.create_for_data(byte_array, cairo.FORMAT_RGB24, smaller_width,
                                                            smaller_height)
         self.image = cairo_surface
-        # self.image = ImageTk.PhotoImage(image=inner_image)
-
-        # print("text found:", pytesseract.image_to_string(
-        #     Image.frombytes("RGB", i.size, i.bgra, "raw", "BGRX"),
-        #     lang='eng',
-        #     config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789'
-        # ))
         self.set_image(0, 0, smaller_width, smaller_height)
-
-        # todo: schedule via gtk
-        # self.master.after(1, lambda: self.capture_image(x, y, width, height, captured_at))
         GLib.idle_add(self.capture_image, x, y, width, height, captured_at)
 
     def on_click(self, mouse_x, mouse_y, button, pressed):
@@ -226,13 +186,7 @@ class App:
         print('Captured screen coordinates:', x, y, width, height)
         self.last_window_capture = datetime.now()
         self.current_coordinates = x, y, width, height
-
-        # todo: maybe schedule this after time again?
-        # self.master.after(0, lambda: self.capture_image(
-        #     x, y, width, height, self.last_window_capture))
-        self.capture_image(
-            x, y, width, height, self.last_window_capture)
-
+        self.capture_image(x, y, width, height, self.last_window_capture)
         self.set_displayed_coordinates(x, y, width, height)
         self.select_window_enabled = False
 
@@ -245,30 +199,22 @@ def numbify(widget):
     widget.connect('changed', filter_numbers)
 
 
-if __name__ == '__main__':
+def main():
     builder = Gtk.Builder()
     builder.add_from_file("main.glade")
     window = builder.get_object("window1")
     window.set_title("reinforcebot")
     window.connect("destroy", Gtk.main_quit)
     window.show_all()
-
     app = App(builder)
-
     numbify(builder.get_object('x'))
     numbify(builder.get_object('y'))
     numbify(builder.get_object('width'))
     numbify(builder.get_object('height'))
-
-    builder.get_object('select-area-button') \
-        .connect("clicked", lambda widget, event: app.on_select_area_clicked(), None)
-    builder.get_object('select-window-button') \
-        .connect("clicked", lambda widget, event: app.on_select_window_clicked(), None)
-
-
-    def record_button_callback(widget, event):
-        print('print called')
-
-
-    # button.override_color(Gtk.StateType.NORMAL, Gdk.color_parse('dark_red'))
+    builder.get_object('select-area-button').connect("clicked", lambda *_: app.on_select_area_clicked(), None)
+    builder.get_object('select-window-button').connect("clicked", lambda *_: app.on_select_window_clicked(), None)
     Gtk.main()
+
+
+if __name__ == '__main__':
+    main()
