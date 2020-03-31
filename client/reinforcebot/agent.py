@@ -85,7 +85,7 @@ class Agent:
             a1 = self.critic_target(torch.from_numpy(np.c_[np.tile(np.eye(2)[0], (len(n), 1)), n]).float())
             a2 = self.critic_target(torch.from_numpy(np.c_[np.tile(np.eye(2)[1], (len(n), 1)), n]).float())
             future_q = np.max(np.c_[a1, a2], axis=1)
-            # future_q[d] = 0
+            future_q[d] = 0
             labels = torch.reshape(torch.from_numpy(r + self.gamma * future_q), [len(a), 1])
 
         self.critic_optimiser.zero_grad()
@@ -114,7 +114,7 @@ def main():
             # env.render()
             action = agent.act(observation)
             next_observation, reward, done, _ = env.step(action)
-            reward = 0 if not done else 1 if total_steps == 200 else -reward
+            reward = 0 if not done else 1 if total_steps == 200 else -1
             replay_buffer.write(observation, action, reward, next_observation, done)
             observation = next_observation
             if done:
