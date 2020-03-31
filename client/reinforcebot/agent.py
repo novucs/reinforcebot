@@ -7,6 +7,8 @@ import torch.nn.functional as F
 from PIL import Image
 from torch import nn, optim
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def convert_pong_observation(observation):
     observation = np.array(Image.fromarray(observation).convert('L'))  # black and white (210x160)
@@ -41,7 +43,7 @@ class ReplayBuffer:
         self.index = (self.index + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
-    def read(self, batch_size=int(1e3)):
+    def read(self, batch_size=128):
         indices = np.random.randint(0, self.size, size=batch_size)
         return (
             self.o[indices],
@@ -68,8 +70,8 @@ class Agent:
     def __init__(self, observation_space, action_space,
                  alpha=0.001, epsilon=0.1, epsilon_decay=1.0, gamma=0.99, tau=0.005):
         self.action_space = action_space
-        self.critic_target = Critic(np.prod(observation_space), self.action_space)
-        self.critic = Critic(np.prod(observation_space), self.action_space)
+        self.critic_target = Critic(np.prod(observation_space), self.action_space).to(device)
+        self.critic = Critic(np.prod(observation_space), self.action_space).to(device)
         self.critic_criterion = nn.MSELoss()
         self.critic_optimiser = optim.Adam(self.critic.parameters(), lr=alpha)
         copy_params(self.critic, self.critic_target)
@@ -87,14 +89,8 @@ class Agent:
             return np.random.randint(self.action_space)
 
         observation = observation.reshape(-1)
-        a1, a2 = self.critic_target(torch.from_numpy(observation).float())
-
-        if abs(a1 - a2) < 0.0015:
-            print(f'confidence: {float(abs(a1 - a2)):.5f}')
-            return np.random.randint(self.action_space)
-
+        a1, a2 = self.critic(torch.from_numpy(observation).float().to(device))
         action = np.array([a1, a2]).argmax()
-        print(action, f'up: {float(a1):.3f} down: {float(a2):.3f}')
         return action
 
     def train(self, experience):
@@ -104,14 +100,14 @@ class Agent:
         n = n.reshape(-1, n.shape[0]).swapaxes(0, 1)
         r = r.reshape(-1, 1)
         with torch.no_grad():
-            actions = torch.from_numpy(a).long().view(-1, 1)
-            future_q = self.critic_target(torch.from_numpy(n).float())
+            actions = torch.from_numpy(a).long().view(-1, 1).to(device)
+            future_q = self.critic_target(torch.from_numpy(n).float().to(device))
             future_q = future_q.gather(1, actions)
             future_q[d] = 0
-            targets = torch.from_numpy(r) + self.gamma * future_q
+            targets = torch.from_numpy(r).to(device) + self.gamma * future_q
 
         self.critic_optimiser.zero_grad()
-        outputs = self.critic(torch.from_numpy(o).float())
+        outputs = self.critic(torch.from_numpy(o).float().to(device))
         targets = outputs.scatter(1, actions, targets)
         loss = self.critic_criterion(outputs, targets)
         loss.backward()
@@ -145,10 +141,10 @@ def main():
             stacked_next_observations = np.stack((observation, next_observation))
             replay_buffer.write(stacked_observations, action, reward, stacked_next_observations, done)
             previous_observation, observation = observation, next_observation
+            experience = replay_buffer.read()
+            agent.train(experience)
             if done:
                 print(f'episode {i}, total steps: {total_steps}')
-                experience = replay_buffer.read()
-                agent.train(experience)
                 if i % 5:
                     copy_params(agent.critic, agent.critic_target)
                 break
