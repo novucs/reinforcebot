@@ -53,10 +53,10 @@ class ReplayBuffer:
 
 
 class Critic(nn.Module):
-    def __init__(self, in_dim):
+    def __init__(self, in_dim, out_dim):
         super(Critic, self).__init__()
         self.fc1 = nn.Linear(in_dim, 200)
-        self.fc2 = nn.Linear(200, 1)
+        self.fc2 = nn.Linear(200, out_dim)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
@@ -68,8 +68,8 @@ class Agent:
     def __init__(self, observation_space, action_space,
                  alpha=0.001, epsilon=0.1, epsilon_decay=1.0, gamma=0.99, tau=0.005):
         self.action_space = action_space
-        self.critic_target = Critic(self.action_space + np.prod(observation_space))
-        self.critic = Critic(self.action_space + np.prod(observation_space))
+        self.critic_target = Critic(np.prod(observation_space), self.action_space)
+        self.critic = Critic(np.prod(observation_space), self.action_space)
         self.critic_criterion = nn.MSELoss()
         self.critic_optimiser = optim.Adam(self.critic.parameters(), lr=alpha)
         copy_params(self.critic, self.critic_target)
@@ -87,8 +87,7 @@ class Agent:
             return np.random.randint(self.action_space)
 
         observation = observation.reshape(-1)
-        a1 = self.critic_target(torch.from_numpy(np.concatenate((self.action(0), observation))).float())
-        a2 = self.critic_target(torch.from_numpy(np.concatenate((self.action(1), observation))).float())
+        a1, a2 = self.critic_target(torch.from_numpy(observation).float())
 
         if abs(a1 - a2) < 0.0015:
             print(f'confidence: {float(abs(a1 - a2)):.5f}')
@@ -103,16 +102,18 @@ class Agent:
         o, a, r, n, d = experience
         o = o.reshape(-1, o.shape[0]).swapaxes(0, 1)
         n = n.reshape(-1, n.shape[0]).swapaxes(0, 1)
+        r = r.reshape(-1, 1)
         with torch.no_grad():
-            a1 = self.critic_target(torch.from_numpy(np.c_[np.tile(self.action(0), (len(n), 1)), n]).float())
-            a2 = self.critic_target(torch.from_numpy(np.c_[np.tile(self.action(1), (len(n), 1)), n]).float())
-            future_q = np.max(np.c_[a1, a2], axis=1)
+            actions = torch.from_numpy(a).long().view(-1, 1)
+            future_q = self.critic_target(torch.from_numpy(n).float())
+            future_q = future_q.gather(1, actions)
             future_q[d] = 0
-            labels = torch.reshape(torch.from_numpy(r + self.gamma * future_q), [len(a), 1])
+            targets = torch.from_numpy(r) + self.gamma * future_q
 
         self.critic_optimiser.zero_grad()
-        outputs = self.critic(torch.from_numpy(np.c_[self.action(a), o]).float())
-        loss = self.critic_criterion(outputs, labels)
+        outputs = self.critic(torch.from_numpy(o).float())
+        targets = outputs.scatter(1, actions, targets)
+        loss = self.critic_criterion(outputs, targets)
         loss.backward()
         self.critic_optimiser.step()
         self.epsilon *= self.epsilon_decay
