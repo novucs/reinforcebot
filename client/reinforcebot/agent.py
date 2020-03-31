@@ -4,7 +4,16 @@ import gym
 import numpy as np
 import torch
 import torch.nn.functional as F
+from PIL import Image
 from torch import nn, optim
+
+
+def convert_pong_observation(observation):
+    observation = np.array(Image.fromarray(observation).convert('L'))  # black and white (210x160)
+    observation = observation[34:194]  # clip bounds (160x160)
+    observation = observation[::2, ::2]  # downsize by skipping every other pixel (80x80)
+    observation = observation / 256  # normalise
+    return observation
 
 
 def copy_params(origin, target, tau=1.0):
@@ -98,7 +107,7 @@ class Agent:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('env_id', nargs='?', default='CartPole-v0')
+    parser.add_argument('env_id', nargs='?', default='Pong-v0')
     args = parser.parse_args()
     env = gym.make(args.env_id)
     env.seed(0)
