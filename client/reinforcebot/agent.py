@@ -22,7 +22,7 @@ def copy_params(origin, target, tau=1.0):
 
 
 class ReplayBuffer:
-    def __init__(self, observation_space, action_space, max_size=8192):
+    def __init__(self, observation_space, action_space, max_size=int(2.5e5)):
         self.o = np.empty((max_size, *observation_space), dtype=np.float32)
         self.a = np.empty((max_size,), dtype=np.int8)
         self.r = np.empty((max_size,), dtype=np.float32)
@@ -41,7 +41,7 @@ class ReplayBuffer:
         self.index = (self.index + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
-    def read(self, batch_size=1024):
+    def read(self, batch_size=int(1e3)):
         indices = np.random.randint(0, self.size, size=batch_size)
         return (
             self.o[indices],
@@ -89,7 +89,13 @@ class Agent:
         observation = observation.reshape(-1)
         a1 = self.critic_target(torch.from_numpy(np.concatenate((self.action(0), observation))).float())
         a2 = self.critic_target(torch.from_numpy(np.concatenate((self.action(1), observation))).float())
+
+        if abs(a1 - a2) < 0.0015:
+            print(f'confidence: {float(abs(a1 - a2)):.5f}')
+            return np.random.randint(self.action_space)
+
         action = np.array([a1, a2]).argmax()
+        print(action, f'up: {float(a1):.3f} down: {float(a2):.3f}')
         return action
 
     def train(self, experience):
@@ -118,7 +124,6 @@ def main():
     args = parser.parse_args()
     env = gym.make(args.env_id)
     env.seed(0)
-    # env._max_episode_steps = 200
     observation_space = (2, 80, 80)
     action_space = 2
     agent = Agent(observation_space, action_space)
