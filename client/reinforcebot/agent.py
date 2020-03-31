@@ -102,7 +102,7 @@ def main():
     args = parser.parse_args()
     env = gym.make(args.env_id)
     env.seed(0)
-    env._max_episode_steps = 2000
+    env._max_episode_steps = 200
     agent = Agent(env.observation_space, env.action_space)
     replay_buffer = ReplayBuffer(env.observation_space, env.action_space)
     episode_count = 10000
@@ -114,7 +114,7 @@ def main():
             # env.render()
             action = agent.act(observation)
             next_observation, reward, done, _ = env.step(action)
-            reward = 0 if not done else -reward
+            reward = 0 if not done else 1 if total_steps == 200 else -reward
             replay_buffer.write(observation, action, reward, next_observation, done)
             observation = next_observation
             if done:
