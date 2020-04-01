@@ -120,11 +120,8 @@ class Agent:
         self.epsilon *= self.epsilon_decay
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('env_id', nargs='?', default='Pong-v0')
-    args = parser.parse_args()
-    env = gym.make(args.env_id)
+def main(env_id):
+    env = gym.make(env_id)
     env.seed(0)
     observation_space = (2, 80, 80)
     action_space = 2
@@ -158,4 +155,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('env_id', nargs='?', default='Pong-v0')
+    args = parser.parse_args()
+    main(args.env_id)

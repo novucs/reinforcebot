@@ -4,6 +4,7 @@ from tkinter import messagebox
 
 import cairo
 import gi
+import gym as gym
 import mss
 from PIL import (
     Image,
@@ -13,12 +14,16 @@ from pynput import (
     mouse,
 )
 
+from reinforcebot import agent
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import (
     Gtk,
     Gdk,
     GLib,
 )
+
+state = None
 
 
 def on_scroll(x, y, dx, dy):
@@ -80,6 +85,9 @@ class App:
         subprocess.Popen(('gnome-screenshot', '-c', '-a'))
         self.select_area_enabled = True
 
+    def on_record_clicked(self):
+        agent.main('reinforcebot-v0')
+
     def on_coordinates_change(self):
         ox, oy, ow, oh = self.current_coordinates
         x, y, w, h = map(lambda c: int(c.get_text()), self.coordinate_variables())
@@ -117,6 +125,8 @@ class App:
         img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
         img.thumbnail((256, 256))
         img.putalpha(256)
+        global state
+        state = img
         surface = cairo.ImageSurface.create_for_data(
             bytearray(img.tobytes('raw', 'BGRa')), cairo.FORMAT_RGB24, img.width, img.height)
         self.image = surface
@@ -207,8 +217,37 @@ def main():
     numbify(builder.get_object('height'))
     builder.get_object('select-area-button').connect("clicked", lambda *_: app.on_select_area_clicked(), None)
     builder.get_object('select-window-button').connect("clicked", lambda *_: app.on_select_window_clicked(), None)
+    builder.get_object('record-button').connect("clicked", lambda *_: app.on_record_clicked(), None)
     Gtk.main()
 
 
+class ReinforceBotEnv(gym.Env):
+    metadata = {'render.modes': ['human']}
+
+    def __init__(self):
+        ...
+
+    def step(self, action):
+        print('stepping')
+        global state
+        # self.step_callback(action)
+        return state
+
+    def reset(self):
+        global state
+        print('resetting')
+        return state
+
+    def render(self, mode='human'):
+        print('rendering')
+
+    def close(self):
+        exit(0)
+
+
 if __name__ == '__main__':
+    gym.envs.register(
+        id='reinforcebot-v0',
+        entry_point='reinforcebot.main:ReinforceBotEnv',
+    )
     main()
