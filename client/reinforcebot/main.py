@@ -109,26 +109,18 @@ class App:
 
         with mss.mss() as sct:
             try:
-                i = sct.grab({'top': y, 'left': x, 'width': width, 'height': height})
+                sct_img = sct.grab({'top': y, 'left': x, 'width': width, 'height': height})
             except mss.exception.ScreenShotError:
                 print('Window is off screen')
                 return
 
-        np_image = np.array(i, dtype=np.uint8)
-        size = tuple(x for x in i.size)  # half the size of the displayed image
-        res = cv2.resize(np_image, dsize=size)
-        inner_image = Image.frombytes("RGBX", size, res, "raw", "RGBX")
-        inner_image.thumbnail((256, 256))
-        smaller_width, smaller_height = inner_image.size
-        thumb = inner_image.crop((0, 0, smaller_width, smaller_height))
-        offset_x = int(max((width - smaller_width) / 2, 0))
-        offset_y = int(max((height - smaller_height) / 2, 0))
-        thumb = ImageChops.offset(thumb, offset_x, offset_y)
-        byte_array = array.array('B', thumb.tobytes())
-        cairo_surface = cairo.ImageSurface.create_for_data(byte_array, cairo.FORMAT_RGB24, smaller_width,
-                                                           smaller_height)
-        self.image = cairo_surface
-        self.set_image(0, 0, smaller_width, smaller_height)
+        img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
+        img.thumbnail((256, 256))
+        img.putalpha(256)
+        surface = cairo.ImageSurface.create_for_data(
+            bytearray(img.tobytes('raw', 'BGRa')), cairo.FORMAT_RGB24, img.width, img.height)
+        self.image = surface
+        self.set_image(0, 0, img.width, img.height)
         GLib.idle_add(self.capture_image, x, y, width, height, captured_at)
 
     def on_click(self, mouse_x, mouse_y, button, pressed):
