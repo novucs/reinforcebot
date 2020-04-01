@@ -1,4 +1,6 @@
 import argparse
+import json
+import os
 
 import gym
 import numpy as np
@@ -74,7 +76,8 @@ class Agent:
         self.critic = Critic(np.prod(observation_space), self.action_space).to(device)
         self.critic_criterion = nn.MSELoss()
         self.critic_optimiser = optim.Adam(self.critic.parameters(), lr=alpha)
-        copy_params(self.critic, self.critic_target)
+        self.critic_target.load_state_dict(self.critic.state_dict())
+        self.critic_target.eval()
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.gamma = gamma
@@ -111,6 +114,8 @@ class Agent:
         targets = outputs.scatter(1, actions, targets)
         loss = self.critic_criterion(outputs, targets)
         loss.backward()
+        for param in self.critic.parameters():
+            param.grad.data.clamp_(-1, 1)
         self.critic_optimiser.step()
         self.epsilon *= self.epsilon_decay
 
@@ -145,8 +150,9 @@ def main():
             agent.train(experience)
             if done:
                 print(f'episode {i}, total steps: {total_steps}')
+                torch.save(agent.critic.state_dict(), 'agent')
                 if i % 5:
-                    copy_params(agent.critic, agent.critic_target)
+                    agent.critic_target.load_state_dict(agent.critic.state_dict())
                 break
     env.close()
 
