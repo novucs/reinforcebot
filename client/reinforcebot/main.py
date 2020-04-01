@@ -1,16 +1,12 @@
-import array
 import subprocess
 from datetime import datetime
 from tkinter import messagebox
 
 import cairo
-import cv2
 import gi
 import mss
-import numpy as np
 from PIL import (
     Image,
-    ImageChops,
 )
 from pynput import (
     keyboard,
@@ -34,8 +30,9 @@ def on_move(x, y):
 
 
 class App:
-    def __init__(self, builder):
+    def __init__(self, builder, window):
         self.builder = builder
+        self.window = window
 
         self.image_on_canvas = None
         self.select_area_enabled = False
@@ -75,9 +72,12 @@ class App:
         messagebox.showinfo('About', 'You clicked About menuitem')
 
     def on_select_window_clicked(self):
+        self.window.hide()
         self.select_window_enabled = True
 
     def on_select_area_clicked(self):
+        self.window.hide()
+        subprocess.Popen(('gnome-screenshot', '-c', '-a'))
         self.select_area_enabled = True
 
     def on_coordinates_change(self):
@@ -166,6 +166,7 @@ class App:
         self.capture(x, y, width, height)
 
     def parse_window_capture(self):
+        subprocess.Popen(('gnome-screenshot', '-c', '-w'))
         cmd = f"wnckprop --xid=$(xdotool getmouselocation --shell | grep WINDOW | sed 's/WINDOW=//') | grep 'Geometry (x, y, width, height):'"
         ps = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -181,6 +182,7 @@ class App:
         self.capture_image(x, y, width, height, self.last_window_capture)
         self.set_displayed_coordinates(x, y, width, height)
         self.select_window_enabled = False
+        self.window.show()
 
 
 def numbify(widget):
@@ -198,7 +200,7 @@ def main():
     window.set_title("reinforcebot")
     window.connect("destroy", Gtk.main_quit)
     window.show_all()
-    app = App(builder)
+    app = App(builder, window)
     numbify(builder.get_object('x'))
     numbify(builder.get_object('y'))
     numbify(builder.get_object('width'))
