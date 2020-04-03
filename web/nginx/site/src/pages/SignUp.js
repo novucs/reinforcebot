@@ -129,7 +129,7 @@ export default class SignUp extends React.Component {
                 disabled={!this.ableToSubmit()}
                 onClick={this.submit}
               >
-                Sign in
+                Sign up
               </Button>
             </Segment>
           </Form>
