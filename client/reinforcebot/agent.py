@@ -55,19 +55,21 @@ class ReplayBuffer:
 
 
 class Critic(nn.Module):
-    def __init__(self, in_dim, out_dim, kernel_size=5, stride=2):
+    def __init__(self, in_dim, out_dim):
         super(Critic, self).__init__()
         steps, width, height = in_dim
-        self.conv1 = nn.Conv2d(steps, 16, kernel_size=kernel_size, stride=stride)
+        ks = 5
+        stride = 2
+        self.conv1 = nn.Conv2d(steps, 16, kernel_size=ks, stride=stride)
         self.bn1 = nn.BatchNorm2d(16)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=kernel_size, stride=stride)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=ks, stride=stride)
         self.bn2 = nn.BatchNorm2d(32)
-        self.conv3 = nn.Conv2d(32, 32, kernel_size=kernel_size, stride=stride)
+        self.conv3 = nn.Conv2d(32, 32, kernel_size=ks, stride=stride)
         self.bn3 = nn.BatchNorm2d(32)
 
         def convolved_size(size, layers=3):
             return size if layers <= 0 else \
-                convolved_size((size - kernel_size) // stride + 1, layers - 1)
+                convolved_size((size - ks) // stride + 1, layers - 1)
 
         linear_size = convolved_size(width) * convolved_size(height) * 32
         self.fc1 = nn.Linear(linear_size, out_dim)
