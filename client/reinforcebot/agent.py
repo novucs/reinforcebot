@@ -1,6 +1,4 @@
 import argparse
-import json
-import os
 
 import gym
 import numpy as np
@@ -56,17 +54,6 @@ class ReplayBuffer:
         )
 
 
-# class Critic(nn.Module):
-#     def __init__(self, in_dim, out_dim):
-#         super(Critic, self).__init__()
-#         self.fc1 = nn.Linear(in_dim, 200)
-#         self.fc2 = nn.Linear(200, out_dim)
-#
-#     def forward(self, x):
-#         x = F.relu(self.fc1(x))
-#         x = self.fc2(x)
-#         return x
-
 class Critic(nn.Module):
     def __init__(self, in_dim, out_dim, kernel_size=5, stride=2):
         super(Critic, self).__init__()
@@ -115,7 +102,6 @@ class Agent:
         if epsilon > np.random.rand():
             return np.random.randint(self.action_space)
 
-        # observation = observation.reshape(-1)
         a1, a2 = self.critic(torch.from_numpy(observation).unsqueeze(0).float().to(device))
         action = np.array([a1, a2]).argmax()
         return action
@@ -123,9 +109,6 @@ class Agent:
     def train(self, experience):
         # Q(s,a)=Q(s,a)-alpha*(r+gamma*max_a(Q(st+1,a))-Q(s,a))
         o, a, r, n, d = experience
-        # o = o.reshape(-1, o.shape[0]).swapaxes(0, 1)
-        # n = n.reshape(-1, n.shape[0]).swapaxes(0, 1)
-        # r = r.reshape(-1, 1)
         with torch.no_grad():
             actions = torch.from_numpy(a).long().view(-1, 1).to(device)
             future_q = self.critic_target(torch.from_numpy(n).float().to(device))
