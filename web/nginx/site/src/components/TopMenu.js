@@ -40,32 +40,27 @@ class UserDropdown extends Component {
 }
 
 export default class TopMenu extends Component {
-  // props:
-  // me: User
-
-  render() {
-    return (
-      <Menu fixed='top' size='large' inverted>
-        <Container>
-          <Menu.Item as='a' href='/'>
-            Home
-          </Menu.Item>
-          <Menu.Item as='a' href='/agents'>
-            Agents
-          </Menu.Item>
-          <Menu.Item position='right'>
-            <div hidden={hasJWT()}>
-              <Button as='a' href='/signin'>
-                Sign in
-              </Button>
-              <Button as='a' href='/signup' primary style={{marginLeft: '0.5em'}}>
-                Sign Up
-              </Button>
-            </div>
-            <UserDropdown me={this.props.me}/>
-          </Menu.Item>
-        </Container>
-      </Menu>
-    )
-  }
+  render = () => (
+    <Menu fixed='top' size='large' inverted>
+      <Container>
+        <Menu.Item as='a' href='/'>
+          Home
+        </Menu.Item>
+        <Menu.Item as='a' href='/agents'>
+          Agents
+        </Menu.Item>
+        <Menu.Item position='right'>
+          <div hidden={hasJWT()}>
+            <Button as='a' href='/signin'>
+              Sign in
+            </Button>
+            <Button as='a' href='/signup' primary style={{marginLeft: '0.5em'}}>
+              Sign up
+            </Button>
+          </div>
+          <UserDropdown me={this.props.me}/>
+        </Menu.Item>
+      </Container>
+    </Menu>
+  );
 }
