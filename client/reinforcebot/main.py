@@ -177,13 +177,11 @@ class App:
 
     def parse_window_capture(self):
         subprocess.Popen(('gnome-screenshot', '-c', '-w'))
-        cmd = f"wnckprop --xid=$(xdotool getmouselocation --shell | grep WINDOW | sed 's/WINDOW=//') | grep 'Geometry (x, y, width, height):'"
-        ps = subprocess.Popen(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        output = ps.communicate()[0]
-        geometry = output.decode('utf-8').split(':')[1].strip().split(', ')[-4:]
-        ox, oy, ow, oh = map(int, geometry)
-        return ox, oy, ow, oh
+        geometry = subprocess.check_output(
+            f"wnckprop --xid=$(xdotool getmouselocation --shell | sed -n 's/WINDOW=//p') | sed -n 's/Geometry (x, y, width, height): //p'",
+            shell=True, stderr=subprocess.STDOUT).decode('utf-8')
+        x, y, width, height = map(int, geometry.split(', '))
+        return x, y, width, height
 
     def capture(self, x, y, width, height):
         print('Captured screen coordinates:', x, y, width, height)
