@@ -126,7 +126,6 @@ class Agent:
         for param in self.critic.parameters():
             param.grad.data.clamp_(-1, 1)
         self.critic_optimiser.step()
-        self.epsilon *= self.epsilon_decay
 
 
 def main(env_id):
