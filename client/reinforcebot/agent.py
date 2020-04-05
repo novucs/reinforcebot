@@ -56,24 +56,48 @@ class ReplayBuffer:
         )
 
 
+# class Critic(nn.Module):
+#     def __init__(self, in_dim, out_dim):
+#         super(Critic, self).__init__()
+#         self.fc1 = nn.Linear(in_dim, 200)
+#         self.fc2 = nn.Linear(200, out_dim)
+#
+#     def forward(self, x):
+#         x = F.relu(self.fc1(x))
+#         x = self.fc2(x)
+#         return x
+
 class Critic(nn.Module):
-    def __init__(self, in_dim, out_dim):
+    def __init__(self, in_dim, out_dim, kernel_size=5, stride=2):
         super(Critic, self).__init__()
-        self.fc1 = nn.Linear(in_dim, 200)
-        self.fc2 = nn.Linear(200, out_dim)
+        steps, width, height = in_dim
+        self.conv1 = nn.Conv2d(steps, 16, kernel_size=kernel_size, stride=stride)
+        self.bn1 = nn.BatchNorm2d(16)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=kernel_size, stride=stride)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.conv3 = nn.Conv2d(32, 32, kernel_size=kernel_size, stride=stride)
+        self.bn3 = nn.BatchNorm2d(32)
+
+        def convolved_size(size, layers=3):
+            return size if layers <= 0 else \
+                convolved_size((size - kernel_size) // stride + 1, layers - 1)
+
+        linear_size = convolved_size(width) * convolved_size(height) * 32
+        self.fc1 = nn.Linear(linear_size, out_dim)
 
     def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-        return x
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn3(self.conv3(x)))
+        return self.fc1(x.view(x.size(0), -1)).squeeze()
 
 
 class Agent:
     def __init__(self, observation_space, action_space,
                  alpha=0.001, epsilon=0.1, epsilon_decay=1.0, gamma=0.99, tau=0.005):
         self.action_space = action_space
-        self.critic_target = Critic(np.prod(observation_space), self.action_space).to(device)
-        self.critic = Critic(np.prod(observation_space), self.action_space).to(device)
+        self.critic_target = Critic(observation_space, self.action_space).to(device)
+        self.critic = Critic(observation_space, self.action_space).to(device)
         self.critic_criterion = nn.MSELoss()
         self.critic_optimiser = optim.Adam(self.critic.parameters(), lr=alpha)
         self.critic_target.load_state_dict(self.critic.state_dict())
@@ -91,17 +115,17 @@ class Agent:
         if epsilon > np.random.rand():
             return np.random.randint(self.action_space)
 
-        observation = observation.reshape(-1)
-        a1, a2 = self.critic(torch.from_numpy(observation).float().to(device))
+        # observation = observation.reshape(-1)
+        a1, a2 = self.critic(torch.from_numpy(observation).unsqueeze(0).float().to(device))
         action = np.array([a1, a2]).argmax()
         return action
 
     def train(self, experience):
         # Q(s,a)=Q(s,a)-alpha*(r+gamma*max_a(Q(st+1,a))-Q(s,a))
         o, a, r, n, d = experience
-        o = o.reshape(-1, o.shape[0]).swapaxes(0, 1)
-        n = n.reshape(-1, n.shape[0]).swapaxes(0, 1)
-        r = r.reshape(-1, 1)
+        # o = o.reshape(-1, o.shape[0]).swapaxes(0, 1)
+        # n = n.reshape(-1, n.shape[0]).swapaxes(0, 1)
+        # r = r.reshape(-1, 1)
         with torch.no_grad():
             actions = torch.from_numpy(a).long().view(-1, 1).to(device)
             future_q = self.critic_target(torch.from_numpy(n).float().to(device))
