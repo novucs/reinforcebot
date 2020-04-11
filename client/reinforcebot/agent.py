@@ -6,6 +6,7 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 from torch import nn, optim
+from torchvision.transforms.functional import resize
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -16,6 +17,12 @@ def convert_pong_observation(observation):
     observation = observation[::2, ::2]  # downsize by skipping every other pixel (80x80)
     observation = observation / 256  # normalise
     return observation
+
+
+def convert_cartpole_observation(observation):
+    observation = Image.fromarray(observation).convert('L')
+    observation = resize(observation, (80, 80))
+    return np.array(observation)
 
 
 def copy_params(origin, target, tau=1.0):
@@ -139,15 +146,18 @@ def main(env_id):
     for i in range(episode_count):
         previous_observation = np.zeros(observation_space[1:])
         observation = env.reset()
-        observation = convert_pong_observation(observation)
+        observation = env.render(mode='rgb_array')
+        observation = convert_cartpole_observation(observation)
         total_steps = 0
         while True:
             total_steps += 1
             env.render()
             stacked_observations = np.stack((previous_observation, observation))
             action = agent.act(stacked_observations)
-            next_observation, reward, done, _ = env.step(2 if action == 0 else 3)
-            next_observation = convert_pong_observation(next_observation)
+            # next_observation, reward, done, _ = env.step(2 if action == 0 else 3)
+            next_observation, reward, done, _ = env.step(action)
+            next_observation = env.render(mode='rgb_array')
+            next_observation = convert_cartpole_observation(next_observation)
             stacked_next_observations = np.stack((observation, next_observation))
             replay_buffer.write(stacked_observations, action, reward, stacked_next_observations, done)
             previous_observation, observation = observation, next_observation
@@ -164,6 +174,6 @@ def main(env_id):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('env_id', nargs='?', default='Pong-v0')
+    parser.add_argument('env_id', nargs='?', default='CartPole-v0')
     args = parser.parse_args()
     main(args.env_id)
