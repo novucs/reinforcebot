@@ -1,5 +1,4 @@
 import subprocess
-from datetime import datetime
 
 import cairo
 import gi
@@ -14,6 +13,45 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib
 
 state = None
+
+
+class ScreenRecorder:
+    def __init__(self):
+        self.coordinates = {}
+        self.callback = None
+        self.running = False
+
+    def stop(self):
+        self.running = False
+
+    def start(self, left, top, width, height, callback):
+        self.coordinates = {
+            'top': top,
+            'left': left,
+            'width': width,
+            'height': height,
+        }
+        self.callback = callback
+
+        if not self.running:
+            self.running = True
+            self._record()
+
+    def _record(self):
+        if not self.running:
+            return
+
+        with mss.mss() as sct:
+            try:
+                screenshot = sct.grab(self.coordinates)
+            except mss.exception.ScreenShotError:
+                raise ValueError(f'Window is off screen. Coordinates: {self.coordinates}')
+
+        image = Image.frombytes('RGB', screenshot.size, screenshot.bgra, 'raw', 'BGRX')
+        image.thumbnail((256, 256))
+        image.putalpha(256)
+        self.callback(image)
+        GLib.idle_add(self._record)
 
 
 def limit_bounds(ox, oy, ow, oh):
@@ -82,15 +120,13 @@ class App:
     def __init__(self, builder, window):
         self.builder = builder
         self.window = window
+        self.screen_recorder = ScreenRecorder()
 
-        self.image_on_canvas = None
         self.keyboard_listener = keyboard.Listener(
             on_press=lambda *kwargs: self.on_press(*kwargs),
             on_release=lambda *kwargs: self.on_release(*kwargs),
         )
         self.keyboard_listener.start()
-        self.current_coordinates = 0, 0, 0, 0
-        self.last_window_capture = 0
 
     def on_press(self, key):
         pass
@@ -99,62 +135,32 @@ class App:
         pass
 
     def on_select_window_clicked(self):
-        self.window.iconify()
+        self.window.hide()
         select_window(lambda x, y, width, height: self.capture(x, y, width, height))
 
     def on_select_area_clicked(self):
-        self.window.iconify()
+        self.window.hide()
         select_area(lambda x, y, width, height: self.capture(x, y, width, height))
 
     def on_record_clicked(self):
         agent.main('reinforcebot-v0')
 
     def set_displayed_coordinates(self, x, y, width, height):
-        components = self.coordinate_variables()
+        components = [self.builder.get_object(v) for v in ('x', 'y', 'width', 'height')]
         for component, value in zip(components, (x, y, width, height)):
             component.set_text(str(value))
 
-    def coordinate_variables(self):
-        return [
-            self.builder.get_object(v)
-            for v in ('x', 'y', 'width', 'height')
-        ]
-
-    def set_image(self, x, y, width, height):
-        pixbuf = Gdk.pixbuf_get_from_surface(self.image, x, y, width, height)
+    def set_preview(self, image):
+        data = bytearray(image.tobytes('raw', 'BGRa'))
+        surface = cairo.ImageSurface.create_for_data(data, cairo.FORMAT_RGB24, image.width, image.height)
+        pixbuf = Gdk.pixbuf_get_from_surface(surface, 0, 0, image.width, image.height)
         self.builder.get_object('preview').set_from_pixbuf(pixbuf)
 
-    def capture_image(self, x, y, width, height, captured_at):
-        if self.last_window_capture > captured_at:
-            return
-
-        with mss.mss() as sct:
-            try:
-                sct_img = sct.grab({'top': y, 'left': x, 'width': width, 'height': height})
-            except mss.exception.ScreenShotError:
-                print('Window is off screen')
-                return
-
-        img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
-        img.thumbnail((256, 256))
-        img.putalpha(256)
-        global state
-        state = img
-        surface = cairo.ImageSurface.create_for_data(
-            bytearray(img.tobytes('raw', 'BGRa')), cairo.FORMAT_RGB24, img.width, img.height)
-        self.image = surface
-        self.set_image(0, 0, img.width, img.height)
-        GLib.idle_add(self.capture_image, x, y, width, height, captured_at)
-
     def capture(self, x, y, width, height):
-        self.window.present()
         print('Captured screen coordinates:', x, y, width, height)
-        self.last_window_capture = datetime.now()
-        self.current_coordinates = x, y, width, height
-        self.capture_image(x, y, width, height, self.last_window_capture)
+        self.screen_recorder.start(x, y, width, height, lambda image: self.set_preview(image))
         self.set_displayed_coordinates(x, y, width, height)
-        self.select_window_enabled = False
-        self.window.show()
+        self.window.present()
 
 
 def numbify(widget):
