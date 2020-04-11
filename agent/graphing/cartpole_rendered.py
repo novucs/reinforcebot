@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime
 
 import gym
 import numpy as np
@@ -8,7 +9,7 @@ from PIL import Image
 from torch import nn, optim
 from torchvision.transforms.functional import resize
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 
 def convert_pong_observation(observation):
@@ -142,7 +143,8 @@ def main(env_id):
     action_space = 2
     agent = Agent(observation_space, action_space)
     replay_buffer = ReplayBuffer(observation_space, action_space)
-    episode_count = 10000
+    episode_count = 2000
+    start = datetime.now()
     for i in range(episode_count):
         previous_observation = np.zeros(observation_space[1:])
         observation = env.reset()
@@ -166,6 +168,8 @@ def main(env_id):
             if done:
                 print(f'episode {i}, total steps: {total_steps}')
                 torch.save(agent.critic.state_dict(), 'agent')
+                with open(f'pixel_training_{start}.csv', 'a') as file:
+                    file.write(f'{i},{total_steps}\n')
                 if i % 5:
                     agent.critic_target.load_state_dict(agent.critic.state_dict())
                 break

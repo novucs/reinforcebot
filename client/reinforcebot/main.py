@@ -1,21 +1,20 @@
-import array
 import subprocess
 from datetime import datetime
 from tkinter import messagebox
 
 import cairo
-import cv2
 import gi
+import gym as gym
 import mss
-import numpy as np
 from PIL import (
     Image,
-    ImageChops,
 )
 from pynput import (
     keyboard,
     mouse,
 )
+
+from reinforcebot import agent
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import (
@@ -23,6 +22,8 @@ from gi.repository import (
     Gdk,
     GLib,
 )
+
+state = None
 
 
 def on_scroll(x, y, dx, dy):
@@ -34,8 +35,9 @@ def on_move(x, y):
 
 
 class App:
-    def __init__(self, builder):
+    def __init__(self, builder, window):
         self.builder = builder
+        self.window = window
 
         self.image_on_canvas = None
         self.select_area_enabled = False
@@ -75,10 +77,16 @@ class App:
         messagebox.showinfo('About', 'You clicked About menuitem')
 
     def on_select_window_clicked(self):
+        self.window.hide()
         self.select_window_enabled = True
 
     def on_select_area_clicked(self):
+        self.window.hide()
+        subprocess.Popen(('gnome-screenshot', '-c', '-a'))
         self.select_area_enabled = True
+
+    def on_record_clicked(self):
+        agent.main('reinforcebot-v0')
 
     def on_coordinates_change(self):
         ox, oy, ow, oh = self.current_coordinates
@@ -109,26 +117,20 @@ class App:
 
         with mss.mss() as sct:
             try:
-                i = sct.grab({'top': y, 'left': x, 'width': width, 'height': height})
+                sct_img = sct.grab({'top': y, 'left': x, 'width': width, 'height': height})
             except mss.exception.ScreenShotError:
                 print('Window is off screen')
                 return
 
-        np_image = np.array(i, dtype=np.uint8)
-        size = tuple(x for x in i.size)  # half the size of the displayed image
-        res = cv2.resize(np_image, dsize=size)
-        inner_image = Image.frombytes("RGBX", size, res, "raw", "RGBX")
-        inner_image.thumbnail((256, 256))
-        smaller_width, smaller_height = inner_image.size
-        thumb = inner_image.crop((0, 0, smaller_width, smaller_height))
-        offset_x = int(max((width - smaller_width) / 2, 0))
-        offset_y = int(max((height - smaller_height) / 2, 0))
-        thumb = ImageChops.offset(thumb, offset_x, offset_y)
-        byte_array = array.array('B', thumb.tobytes())
-        cairo_surface = cairo.ImageSurface.create_for_data(byte_array, cairo.FORMAT_RGB24, smaller_width,
-                                                           smaller_height)
-        self.image = cairo_surface
-        self.set_image(0, 0, smaller_width, smaller_height)
+        img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
+        img.thumbnail((256, 256))
+        img.putalpha(256)
+        global state
+        state = img
+        surface = cairo.ImageSurface.create_for_data(
+            bytearray(img.tobytes('raw', 'BGRa')), cairo.FORMAT_RGB24, img.width, img.height)
+        self.image = surface
+        self.set_image(0, 0, img.width, img.height)
         GLib.idle_add(self.capture_image, x, y, width, height, captured_at)
 
     def on_click(self, mouse_x, mouse_y, button, pressed):
@@ -174,13 +176,12 @@ class App:
         self.capture(x, y, width, height)
 
     def parse_window_capture(self):
-        cmd = f"wnckprop --xid=$(xdotool getmouselocation --shell | grep WINDOW | sed 's/WINDOW=//') | grep 'Geometry (x, y, width, height):'"
-        ps = subprocess.Popen(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        output = ps.communicate()[0]
-        geometry = output.decode('utf-8').split(':')[1].strip().split(', ')[-4:]
-        ox, oy, ow, oh = map(int, geometry)
-        return ox, oy, ow, oh
+        subprocess.Popen(('gnome-screenshot', '-c', '-w'))
+        geometry = subprocess.check_output(
+            f"wnckprop --xid=$(xdotool getmouselocation --shell | sed -n 's/WINDOW=//p') | sed -n 's/Geometry (x, y, width, height): //p'",
+            shell=True, stderr=subprocess.STDOUT).decode('utf-8')
+        x, y, width, height = map(int, geometry.split(', '))
+        return x, y, width, height
 
     def capture(self, x, y, width, height):
         print('Captured screen coordinates:', x, y, width, height)
@@ -189,6 +190,7 @@ class App:
         self.capture_image(x, y, width, height, self.last_window_capture)
         self.set_displayed_coordinates(x, y, width, height)
         self.select_window_enabled = False
+        self.window.show()
 
 
 def numbify(widget):
@@ -206,15 +208,44 @@ def main():
     window.set_title("reinforcebot")
     window.connect("destroy", Gtk.main_quit)
     window.show_all()
-    app = App(builder)
+    app = App(builder, window)
     numbify(builder.get_object('x'))
     numbify(builder.get_object('y'))
     numbify(builder.get_object('width'))
     numbify(builder.get_object('height'))
     builder.get_object('select-area-button').connect("clicked", lambda *_: app.on_select_area_clicked(), None)
     builder.get_object('select-window-button').connect("clicked", lambda *_: app.on_select_window_clicked(), None)
+    builder.get_object('record-button').connect("clicked", lambda *_: app.on_record_clicked(), None)
     Gtk.main()
 
 
+class ReinforceBotEnv(gym.Env):
+    metadata = {'render.modes': ['human']}
+
+    def __init__(self):
+        ...
+
+    def step(self, action):
+        print('stepping')
+        global state
+        # self.step_callback(action)
+        return state
+
+    def reset(self):
+        global state
+        print('resetting')
+        return state
+
+    def render(self, mode='human'):
+        print('rendering')
+
+    def close(self):
+        exit(0)
+
+
 if __name__ == '__main__':
+    gym.envs.register(
+        id='reinforcebot-v0',
+        entry_point='reinforcebot.main:ReinforceBotEnv',
+    )
     main()

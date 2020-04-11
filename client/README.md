@@ -5,5 +5,6 @@
 * Linux
 * `xdotool`
 * `libwnck3`
+* `gnome-screenshot`
 * `cuda`
 * `cudann`
