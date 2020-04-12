@@ -4,6 +4,7 @@ import cairo
 import gi
 import gym as gym
 
+from reinforcebot.experience_replay_buffer import ExperienceReplayBuffer
 from reinforcebot.messaging import notify
 
 gi.require_version("Gtk", "3.0")
@@ -11,7 +12,8 @@ gi.require_version("Gdk", "3.0")
 from gi.repository import Gtk, Gdk
 
 from reinforcebot import screen
-from reinforcebot.experience import record_new_user_experience, handover_control, record_user_experience
+from reinforcebot.experience import record_new_user_experience, handover_control, record_user_experience, \
+    OBSERVATION_SPACE
 
 state = None
 
@@ -78,7 +80,10 @@ class App:
             return
 
         def control():
-            self.agent_experience = handover_control(self.screen_recorder, self.action_mapping)
+            if self.agent_experience is None:
+                self.agent_experience = ExperienceReplayBuffer(OBSERVATION_SPACE)
+
+            handover_control(self.screen_recorder, self.action_mapping, self.agent_experience)
 
         thread = Thread(target=control)
         thread.start()

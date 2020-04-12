@@ -7,7 +7,7 @@ from pynput.keyboard import Key, KeyCode
 from torchvision.transforms.functional import resize
 
 from reinforcebot.agent import Agent
-from reinforcebot.experience_replay_buffer import DynamicExperienceReplayBuffer, ExperienceReplayBuffer
+from reinforcebot.experience_replay_buffer import DynamicExperienceReplayBuffer
 from reinforcebot.messaging import notify
 
 FRAME_SIZE = (80, 80)
@@ -113,12 +113,11 @@ def record_user_experience(screen_recorder, action_mapping, buffer):
     notify('Successfully saved user experience')
 
 
-def handover_control(screen_recorder, action_mapping):
+def handover_control(screen_recorder, action_mapping, buffer):
     notify('Your agent is now controlling the keyboard. Press ESC to stop.')
 
     keyboard_recorder = KeyboardBuffer()
     keyboard_recorder.start()
-    buffer = ExperienceReplayBuffer(OBSERVATION_SPACE)
     agent = Agent(OBSERVATION_SPACE, len(action_mapping))
     controller = keyboard.Controller()
     pressed_keys = set()
@@ -159,4 +158,3 @@ def handover_control(screen_recorder, action_mapping):
 
     keyboard_recorder.stop()
     notify('Agent control has been lifted')
-    return buffer
