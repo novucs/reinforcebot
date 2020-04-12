@@ -50,4 +50,5 @@ class Ensemble:
         return mean_reward
 
     def train(self, segment1, segment2, preference):
+        # TODO: Train
         pass

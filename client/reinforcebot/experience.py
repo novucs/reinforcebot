@@ -9,8 +9,8 @@ from torchvision.transforms.functional import resize
 
 from reinforcebot import reward
 from reinforcebot.agent import Agent
-from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE, ENSEMBLE_SIZE, STEP_SECONDS
-from reinforcebot.replay_buffer import DynamicExperienceReplayBuffer
+from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE, ENSEMBLE_SIZE, STEP_SECONDS, SEGMENT_SIZE
+from reinforcebot.replay_buffer import DynamicExperienceReplayBuffer, RewardReplayBuffer
 from reinforcebot.messaging import notify
 
 
@@ -113,7 +113,7 @@ def record_user_experience(screen_recorder, action_mapping, buffer):
     notify('Successfully saved user experience')
 
 
-def handover_control(screen_recorder, action_mapping, buffer):
+def handover_control(screen_recorder, action_mapping, experience_buffer):
     notify('Your agent is now controlling the keyboard. Press ESC to stop.')
 
     keyboard_recorder = KeyboardBuffer()
@@ -124,6 +124,7 @@ def handover_control(screen_recorder, action_mapping, buffer):
     previous_frame = np.zeros(FRAME_SIZE)
     frame = convert_frame(screen_recorder.screenshot())
     ensemble = reward.Ensemble(OBSERVATION_SPACE, len(action_mapping), ENSEMBLE_SIZE)
+    reward_buffer = RewardReplayBuffer(OBSERVATION_SPACE)
 
     while True:
         if Key.esc.value.vk in keyboard_recorder.read():
@@ -145,15 +146,26 @@ def handover_control(screen_recorder, action_mapping, buffer):
 
         next_frame = convert_frame(screen_recorder.screenshot())
         next_observation = np.stack((frame, next_frame))
-        buffer.write(observation, action, next_observation)
+        experience_buffer.write(observation, action, next_observation)
 
         previous_frame, frame = frame, next_frame
 
-        o, a, n = buffer.read()
+        o, a, n = experience_buffer.read()
         with torch.no_grad():
             r = ensemble.predict(o, a).numpy()
         d = np.zeros(a.shape, dtype=np.float32)
         agent.train((o, a, r, n, d))
+
+        if experience_buffer.size > SEGMENT_SIZE:
+            # TODO: Switch out dummy reward buffer sampling with user controlled
+            #       sampling
+            s1 = experience_buffer.sample_segment()
+            s2 = experience_buffer.sample_segment()
+
+            reward_buffer.write(s1, s2, 1)
+
+            s1, s2, p = reward_buffer.read()
+            ensemble.train(s1, s2, p)
 
     for key in pressed_keys:
         controller.release(KeyCode.from_vk(key))
