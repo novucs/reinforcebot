@@ -7,11 +7,9 @@ from pynput.keyboard import Key, KeyCode
 from torchvision.transforms.functional import resize
 
 from reinforcebot.agent import Agent
+from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE
 from reinforcebot.experience_replay_buffer import DynamicExperienceReplayBuffer
 from reinforcebot.messaging import notify
-
-FRAME_SIZE = (80, 80)
-OBSERVATION_SPACE = (2, *FRAME_SIZE)
 
 
 class KeyboardBuffer:

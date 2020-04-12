@@ -2,8 +2,8 @@ from threading import Thread
 
 import cairo
 import gi
-import gym as gym
 
+from reinforcebot.config import OBSERVATION_SPACE
 from reinforcebot.experience_replay_buffer import ExperienceReplayBuffer
 from reinforcebot.messaging import notify
 
@@ -12,8 +12,7 @@ gi.require_version("Gdk", "3.0")
 from gi.repository import Gtk, Gdk
 
 from reinforcebot import screen
-from reinforcebot.experience import record_new_user_experience, handover_control, record_user_experience, \
-    OBSERVATION_SPACE
+from reinforcebot.experience import record_new_user_experience, handover_control, record_user_experience
 
 state = None
 
@@ -43,7 +42,6 @@ class App:
     def capture(self, x, y, width, height):
         print('Captured screen coordinates:', x, y, width, height)
         self.screen_recorder.start(x, y, width, height, lambda image: self.set_preview(image))
-        self.set_displayed_coordinates(x, y, width, height)
         self.window.present()
 
     def set_preview(self, image):
@@ -88,19 +86,6 @@ class App:
         thread = Thread(target=control)
         thread.start()
 
-    def set_displayed_coordinates(self, x, y, width, height):
-        components = [self.builder.get_object(v) for v in ('x', 'y', 'width', 'height')]
-        for component, value in zip(components, (x, y, width, height)):
-            component.set_text(str(value))
-
-
-def numbify(widget):
-    def filter_numbers(entry, *args):
-        text = entry.get_text().strip()
-        entry.set_text(''.join([i for i in text if i in '0123456789']))
-
-    widget.connect('changed', filter_numbers)
-
 
 def main():
     builder = Gtk.Builder()
@@ -110,10 +95,6 @@ def main():
     window.connect("destroy", Gtk.main_quit)
     window.show_all()
     app = App(builder, window)
-    numbify(builder.get_object('x'))
-    numbify(builder.get_object('y'))
-    numbify(builder.get_object('width'))
-    numbify(builder.get_object('height'))
     builder.get_object('select-area-button').connect("clicked", lambda *_: app.on_select_area_clicked(), None)
     builder.get_object('select-window-button').connect("clicked", lambda *_: app.on_select_window_clicked(), None)
     builder.get_object('record-button').connect("clicked", lambda *_: app.on_record_clicked(), None)
@@ -121,33 +102,5 @@ def main():
     Gtk.main()
 
 
-class ReinforceBotEnv(gym.Env):
-    metadata = {'render.modes': ['human']}
-
-    def __init__(self):
-        ...
-
-    def step(self, action):
-        print('stepping')
-        global state
-        # self.step_callback(action)
-        return state
-
-    def reset(self):
-        global state
-        print('resetting')
-        return state
-
-    def render(self, mode='human'):
-        print('rendering')
-
-    def close(self):
-        exit(0)
-
-
 if __name__ == '__main__':
-    gym.envs.register(
-        id='reinforcebot-v0',
-        entry_point='reinforcebot.main:ReinforceBotEnv',
-    )
     main()
