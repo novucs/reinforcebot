@@ -28,6 +28,7 @@ class App:
         self.screen_recorder = screen.Recorder()
         self.action_mapping = None
         self.user_experience = None
+        self.agent_experience = None
 
     def on_select_window_clicked(self):
         self.window.hide()
@@ -76,7 +77,10 @@ class App:
             notify('You must record experience yourself to let the agent know what buttons to press')
             return
 
-        thread = Thread(target=lambda: handover_control(self.screen_recorder, self.action_mapping))
+        def control():
+            self.agent_experience = handover_control(self.screen_recorder, self.action_mapping)
+
+        thread = Thread(target=control)
         thread.start()
 
     def set_displayed_coordinates(self, x, y, width, height):

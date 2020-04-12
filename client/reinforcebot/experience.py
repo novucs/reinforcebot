@@ -3,10 +3,11 @@ import time
 
 import numpy as np
 from pynput import keyboard
-from pynput.keyboard import Key
+from pynput.keyboard import Key, KeyCode
 from torchvision.transforms.functional import resize
 
-from reinforcebot.experience_replay_buffer import DynamicExperienceReplayBuffer
+from reinforcebot.agent import Agent
+from reinforcebot.experience_replay_buffer import DynamicExperienceReplayBuffer, ExperienceReplayBuffer
 from reinforcebot.messaging import notify
 
 FRAME_SIZE = (80, 80)
@@ -51,23 +52,25 @@ def record_new_user_experience(screen_recorder):
 
     keyboard_recorder = KeyboardBuffer()
     keyboard_recorder.start()
-    previous_frame = np.zeros(FRAME_SIZE)
     buffer = DynamicExperienceReplayBuffer(OBSERVATION_SPACE)
+    previous_frame = np.zeros(FRAME_SIZE)
+    frame = convert_frame(screen_recorder.screenshot())
 
     while True:
-        frame = convert_frame(screen_recorder.screenshot())
         observation = np.stack((previous_frame, frame))
         time.sleep(0.1)
-        action = keyboard_recorder.read()
+        keys = keyboard_recorder.read()
 
-        if Key.esc.value.vk in action:
+        if Key.esc.value.vk in keys:
             break
 
-        action -= {Key.esc.value.vk, *range(Key.f1.value.vk, Key.f20.value.vk)}
+        keys -= {Key.esc.value.vk, *range(Key.f1.value.vk, Key.f20.value.vk)}
+
         next_frame = convert_frame(screen_recorder.screenshot())
         next_observation = np.stack((frame, next_frame))
-        buffer.write(observation, action, next_observation)
-        previous_frame = frame
+        buffer.write(observation, keys, next_observation)
+
+        previous_frame, frame = frame, next_frame
 
     keyboard_recorder.stop()
     action_mapping, buffer = buffer.build()
@@ -80,11 +83,11 @@ def record_user_experience(screen_recorder, action_mapping, buffer):
 
     keyboard_recorder = KeyboardBuffer()
     keyboard_recorder.start()
-    previous_frame = np.zeros(FRAME_SIZE)
     allowed_keys = set(itertools.chain(*action_mapping.values()))
+    previous_frame = np.zeros(FRAME_SIZE)
+    frame = convert_frame(screen_recorder.screenshot())
 
     while True:
-        frame = convert_frame(screen_recorder.screenshot())
         observation = np.stack((previous_frame, frame))
         time.sleep(0.1)
         keys = keyboard_recorder.read()
@@ -103,11 +106,57 @@ def record_user_experience(screen_recorder, action_mapping, buffer):
         next_frame = convert_frame(screen_recorder.screenshot())
         next_observation = np.stack((frame, next_frame))
         buffer.write(observation, action, next_observation)
-        previous_frame = frame
+
+        previous_frame, frame = frame, next_frame
 
     keyboard_recorder.stop()
     notify('Successfully saved user experience')
 
 
 def handover_control(screen_recorder, action_mapping):
-    pass
+    notify('Your agent is now controlling the keyboard. Press ESC to stop.')
+
+    keyboard_recorder = KeyboardBuffer()
+    keyboard_recorder.start()
+    buffer = ExperienceReplayBuffer(OBSERVATION_SPACE)
+    agent = Agent(OBSERVATION_SPACE, len(action_mapping))
+    controller = keyboard.Controller()
+    pressed_keys = set()
+    previous_frame = np.zeros(FRAME_SIZE)
+    frame = convert_frame(screen_recorder.screenshot())
+
+    while True:
+        if Key.esc.value.vk in keyboard_recorder.read():
+            break
+
+        observation = np.stack((previous_frame, frame))
+        action = agent.act(observation)
+
+        released_keys = pressed_keys - action_mapping[action]
+        pressed_keys = action_mapping[action]
+
+        for key in released_keys:
+            controller.release(KeyCode.from_vk(key))
+
+        for key in pressed_keys:
+            controller.press(KeyCode.from_vk(key))
+
+        time.sleep(0.1)
+
+        next_frame = convert_frame(screen_recorder.screenshot())
+        next_observation = np.stack((frame, next_frame))
+        buffer.write(observation, action, next_observation)
+
+        previous_frame, frame = frame, next_frame
+
+        o, a, n = buffer.read()
+        r = np.zeros(a.shape, dtype=np.float32)
+        d = np.zeros(a.shape, dtype=np.float32)
+        agent.train((o, a, r, n, d))
+
+    for key in pressed_keys:
+        controller.release(KeyCode.from_vk(key))
+
+    keyboard_recorder.stop()
+    notify('Agent control has been lifted')
+    return buffer

@@ -111,8 +111,8 @@ class Agent:
         if epsilon > np.random.rand():
             return np.random.randint(self.action_space)
 
-        a1, a2 = self.critic(torch.from_numpy(observation).unsqueeze(0).float().to(device))
-        action = np.array([a1, a2]).argmax()
+        actions = self.critic(torch.from_numpy(observation).unsqueeze(0).float().to(device))
+        action = np.array([*actions]).argmax()
         return action
 
     def train(self, experience):
