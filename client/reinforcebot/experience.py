@@ -2,12 +2,14 @@ import itertools
 import time
 
 import numpy as np
+import torch
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
 from torchvision.transforms.functional import resize
 
+from reinforcebot import reward
 from reinforcebot.agent import Agent
-from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE
+from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE, ENSEMBLE_SIZE
 from reinforcebot.experience_replay_buffer import DynamicExperienceReplayBuffer
 from reinforcebot.messaging import notify
 
@@ -121,6 +123,7 @@ def handover_control(screen_recorder, action_mapping, buffer):
     pressed_keys = set()
     previous_frame = np.zeros(FRAME_SIZE)
     frame = convert_frame(screen_recorder.screenshot())
+    ensemble = reward.Ensemble(OBSERVATION_SPACE, ENSEMBLE_SIZE)
 
     while True:
         if Key.esc.value.vk in keyboard_recorder.read():
@@ -147,7 +150,8 @@ def handover_control(screen_recorder, action_mapping, buffer):
         previous_frame, frame = frame, next_frame
 
         o, a, n = buffer.read()
-        r = np.zeros(a.shape, dtype=np.float32)
+        with torch.no_grad():
+            r = ensemble.predict(o).numpy()
         d = np.zeros(a.shape, dtype=np.float32)
         agent.train((o, a, r, n, d))
 

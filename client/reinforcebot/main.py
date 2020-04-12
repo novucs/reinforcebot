@@ -15,8 +15,6 @@ from gi.repository import Gtk, Gdk
 from reinforcebot import screen
 from reinforcebot.experience import record_new_user_experience, handover_control, record_user_experience
 
-state = None
-
 
 # handover control F1
 # toggle training F2

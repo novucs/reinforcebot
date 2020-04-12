@@ -1,3 +1,4 @@
+import torch
 import torch.nn.functional as F
 from torch import nn
 
@@ -30,4 +31,13 @@ class Predictor(nn.Module):
 
 
 class Ensemble:
-    pass
+    def __init__(self, observation_space, size):
+        self.predictors = [Predictor(observation_space) for _ in range(size)]
+
+    def predict(self, observation):
+        observation = torch.from_numpy(observation).float()
+        total_reward = 0
+        for predictor in self.predictors:
+            total_reward += predictor(observation)
+        mean_reward = total_reward / len(self.predictors)
+        return mean_reward
