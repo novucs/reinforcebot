@@ -16,10 +16,7 @@ def on_press(key):
 
 
 def on_release(key):
-    global action, running
-    if key == keyboard.Key.esc:
-        running = False
-        return False
+    global action
     action = 0
 
 

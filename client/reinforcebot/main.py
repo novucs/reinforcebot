@@ -2,8 +2,9 @@ from threading import Thread
 
 import cairo
 import gi
+from torchvision.transforms.functional import resize
 
-from reinforcebot.config import OBSERVATION_SPACE
+from reinforcebot.config import FRAME_DISPLAY_SIZE, FRAME_SIZE, OBSERVATION_SPACE
 from reinforcebot.experience_replay_buffer import ExperienceReplayBuffer
 from reinforcebot.messaging import notify
 
@@ -45,8 +46,9 @@ class App:
         self.window.present()
 
     def set_preview(self, image):
-        image.thumbnail((256, 256))
-        image.putalpha(256)
+        image = image.convert('L').convert('RGBA')
+        image = resize(image, FRAME_SIZE)
+        image = resize(image, FRAME_DISPLAY_SIZE)
         data = memoryview(bytearray(image.tobytes('raw', 'BGRa')))
         surface = cairo.ImageSurface.create_for_data(data, cairo.FORMAT_RGB24, image.width, image.height)
         pixbuf = Gdk.pixbuf_get_from_surface(surface, 0, 0, image.width, image.height)
