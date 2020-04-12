@@ -293,7 +293,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton">
+              <object class="GtkButton" id="handover-control-button">
                 <property name="label" translatable="yes"> Handover Control</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>

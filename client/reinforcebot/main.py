@@ -1,39 +1,19 @@
+from threading import Thread
+
 import cairo
 import gi
 import gym as gym
-from pynput import keyboard
 
-from reinforcebot import agent, screen
+from reinforcebot.messaging import notify
 
 gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
 from gi.repository import Gtk, Gdk
 
+from reinforcebot import screen
+from reinforcebot.experience import record_user_experience, handover_control
+
 state = None
-
-
-class KeyboardRecorder:
-    def __init__(self):
-        self.keyboard_listener = keyboard.Listener(
-            on_press=lambda key: self.on_press(key),
-            on_release=lambda key: self.on_release(key),
-        )
-        self.pressed_keys = set()
-        self.released_keys = set()
-
-    def on_press(self, key):
-        pass
-
-    def on_release(self, key):
-        pass
-
-    def stop(self):
-        self.keyboard_listener.stop()
-
-    def start(self):
-        self.keyboard_listener.start()
-
-    def read(self):
-        pass
 
 
 class App:
@@ -41,7 +21,8 @@ class App:
         self.builder = builder
         self.window = window
         self.screen_recorder = screen.Recorder()
-        self.keyboard_recorder = KeyboardRecorder()
+        self.action_mapping = None
+        self.user_experience = None
 
     def on_select_window_clicked(self):
         self.window.hide()
@@ -58,13 +39,37 @@ class App:
         self.window.present()
 
     def set_preview(self, image):
+        image.thumbnail((256, 256))
+        image.putalpha(256)
         data = memoryview(bytearray(image.tobytes('raw', 'BGRa')))
         surface = cairo.ImageSurface.create_for_data(data, cairo.FORMAT_RGB24, image.width, image.height)
         pixbuf = Gdk.pixbuf_get_from_surface(surface, 0, 0, image.width, image.height)
         self.builder.get_object('preview').set_from_pixbuf(pixbuf)
 
     def on_record_clicked(self):
-        self.keyboard_recorder.start()
+        if not self.screen_recorder.running:
+            notify('You select an area of your screen to record')
+            return
+
+        def record():
+            action_mapping, user_experience = record_user_experience(self.screen_recorder)
+            self.action_mapping = action_mapping
+            self.user_experience = user_experience
+
+        thread = Thread(target=record)
+        thread.start()
+
+    def on_handover_control_clicked(self):
+        if not self.screen_recorder.running:
+            notify('You select an area of your screen to record')
+            return
+
+        if not self.action_mapping:
+            notify('You must record experience yourself to let the agent know what buttons to press')
+            return
+
+        thread = Thread(target=lambda: handover_control(self.screen_recorder, self.action_mapping))
+        thread.start()
 
     def set_displayed_coordinates(self, x, y, width, height):
         components = [self.builder.get_object(v) for v in ('x', 'y', 'width', 'height')]
@@ -95,6 +100,7 @@ def main():
     builder.get_object('select-area-button').connect("clicked", lambda *_: app.on_select_area_clicked(), None)
     builder.get_object('select-window-button').connect("clicked", lambda *_: app.on_select_window_clicked(), None)
     builder.get_object('record-button').connect("clicked", lambda *_: app.on_record_clicked(), None)
+    builder.get_object('handover-control-button').connect("clicked", lambda *_: app.on_handover_control_clicked(), None)
     Gtk.main()
 
 

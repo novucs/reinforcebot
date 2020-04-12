@@ -1,12 +1,11 @@
 import subprocess
 
-import gi
 import mss
+from gi.repository import Gdk, GLib
 from PIL import Image
 from pynput import mouse
 
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gdk, GLib
+from reinforcebot.messaging import notify
 
 
 class Recorder:
@@ -35,17 +34,16 @@ class Recorder:
         if not self.running:
             return
 
+        self.callback(self.screenshot())
+        GLib.idle_add(self._record)
+
+    def screenshot(self):
         with mss.mss() as sct:
             try:
                 screenshot = sct.grab(self.coordinates)
             except mss.exception.ScreenShotError:
                 raise ValueError(f'Window is off screen. Coordinates: {self.coordinates}')
-
-        image = Image.frombytes('RGB', screenshot.size, screenshot.bgra, 'raw', 'BGRX')
-        image.thumbnail((256, 256))
-        image.putalpha(256)
-        self.callback(image)
-        GLib.idle_add(self._record)
+        return Image.frombytes('RGB', screenshot.size, screenshot.bgra, 'raw', 'BGRX')
 
 
 def _limit_bounds(ox, oy, ow, oh):
@@ -67,6 +65,8 @@ def _limit_bounds(ox, oy, ow, oh):
 
 
 def select_window(callback):
+    notify('Click a window you wish to record')
+
     def on_click(mouse_x, mouse_y, button, pressed):
         if pressed:
             return
@@ -85,6 +85,7 @@ def select_window(callback):
 
 
 def select_area(callback):
+    notify('Drag an area on your screen')
     subprocess.Popen(('gnome-screenshot', '-c', '-a'))
 
     def on_click(mouse_x, mouse_y, button, pressed):
