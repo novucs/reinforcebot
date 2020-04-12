@@ -1,4 +1,4 @@
-import subprocess
+import itertools
 import time
 
 import numpy as np
@@ -46,7 +46,7 @@ def convert_frame(frame):
     return np.array(frame)
 
 
-def record_user_experience(screen_recorder):
+def record_new_user_experience(screen_recorder):
     notify('Recording has begun. Press ESC to stop.')
 
     keyboard_recorder = KeyboardBuffer()
@@ -57,17 +57,48 @@ def record_user_experience(screen_recorder):
     while True:
         frame = convert_frame(screen_recorder.screenshot())
         observation = np.stack((previous_frame, frame))
-        time.sleep(0.1)  # sleep 100 milliseconds
+        time.sleep(0.1)
         action = keyboard_recorder.read()
 
-        # handover control F1
-        # toggle training F2
-        # reward shaping F3
-        # stop recording F4
-        if Key.f4.value.vk in action or Key.esc.value.vk in action:  # cancel
+        if Key.esc.value.vk in action:
             break
 
-        action = action - {Key.esc.value.vk, *range(Key.f1.value.vk, Key.f20.value.vk)}
+        action -= {Key.esc.value.vk, *range(Key.f1.value.vk, Key.f20.value.vk)}
+        next_frame = convert_frame(screen_recorder.screenshot())
+        next_observation = np.stack((frame, next_frame))
+        buffer.write(observation, action, next_observation)
+        previous_frame = frame
+
+    keyboard_recorder.stop()
+    action_mapping, buffer = buffer.build()
+    notify('Successfully saved user experience with new action set')
+    return action_mapping, buffer
+
+
+def record_user_experience(screen_recorder, action_mapping, buffer):
+    notify('Recording has begun. Press ESC to stop.')
+
+    keyboard_recorder = KeyboardBuffer()
+    keyboard_recorder.start()
+    previous_frame = np.zeros(FRAME_SIZE)
+    allowed_keys = set(itertools.chain(*action_mapping.values()))
+
+    while True:
+        frame = convert_frame(screen_recorder.screenshot())
+        observation = np.stack((previous_frame, frame))
+        time.sleep(0.1)
+        keys = keyboard_recorder.read()
+
+        if Key.esc.value.vk in keys:
+            break
+
+        keys -= {Key.esc.value.vk, *range(Key.f1.value.vk, Key.f20.value.vk)}
+        keys &= allowed_keys
+
+        if keys not in action_mapping.values():
+            keys = next(iter(keys))
+
+        action = next((a for a, k in action_mapping.items() if keys == k), 0)
 
         next_frame = convert_frame(screen_recorder.screenshot())
         next_observation = np.stack((frame, next_frame))
@@ -75,9 +106,7 @@ def record_user_experience(screen_recorder):
         previous_frame = frame
 
     keyboard_recorder.stop()
-    action_space, buffer = buffer.build()
     notify('Successfully saved user experience')
-    return action_space, buffer
 
 
 def handover_control(screen_recorder, action_mapping):

@@ -31,7 +31,7 @@ class DynamicExperienceReplayBuffer(ExperienceReplayBuffer):
     def __init__(self, observation_space, max_size=int(2.5e5)):
         super(DynamicExperienceReplayBuffer, self).__init__(observation_space, max_size)
         self.a = [''] * max_size
-        self.action_space = set()
+        self.action_space = {'', }
 
     def write(self, o, a, n):
         a = ','.join(map(str, a))
@@ -39,10 +39,13 @@ class DynamicExperienceReplayBuffer(ExperienceReplayBuffer):
         self.action_space.add(a)
 
     def build(self):
-        action_mapping = {idx: action for idx, action in enumerate(self.action_space)}
-        inverse_action_mapping = {action: idx for idx, action in action_mapping.items()}
+        conversion = {action: idx for idx, action in enumerate(self.action_space)}
         buffer = ExperienceReplayBuffer(self.observation_space, self.max_size)
         buffer.o = self.o
         buffer.n = self.n
-        buffer.a = np.array([inverse_action_mapping[a] for a in self.a[:self.size]], dtype=np.int8)
+        buffer.a[:self.size] = np.array([conversion[a] for a in self.a[:self.size]], dtype=np.int8)
+        action_mapping = {
+            idx: set(map(int, action.split(','))) if action else set()
+            for idx, action in enumerate(self.action_space)
+        }
         return action_mapping, buffer

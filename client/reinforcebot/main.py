@@ -11,10 +11,15 @@ gi.require_version("Gdk", "3.0")
 from gi.repository import Gtk, Gdk
 
 from reinforcebot import screen
-from reinforcebot.experience import record_user_experience, handover_control
+from reinforcebot.experience import record_new_user_experience, handover_control, record_user_experience
 
 state = None
 
+
+# handover control F1
+# toggle training F2
+# reward shaping F3
+# stop recording F4
 
 class App:
     def __init__(self, builder, window):
@@ -52,9 +57,12 @@ class App:
             return
 
         def record():
-            action_mapping, user_experience = record_user_experience(self.screen_recorder)
-            self.action_mapping = action_mapping
-            self.user_experience = user_experience
+            if self.action_mapping is None:
+                action_mapping, user_experience = record_new_user_experience(self.screen_recorder)
+                self.action_mapping = action_mapping
+                self.user_experience = user_experience
+            else:
+                record_user_experience(self.screen_recorder, self.action_mapping, self.user_experience)
 
         thread = Thread(target=record)
         thread.start()
