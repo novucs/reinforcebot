@@ -103,17 +103,12 @@ class Agent:
         self.gamma = gamma
         self.tau = tau
 
-    def action(self, id_):
-        """returns one-hot encoded action"""
-        return np.eye(self.action_space)[id_]
-
     def act(self, observation, epsilon=0.1):
         if epsilon > np.random.rand():
             return np.random.randint(self.action_space)
 
-        actions = self.critic(torch.from_numpy(observation).unsqueeze(0).float().to(device))
-        action = np.array([*actions]).argmax()
-        return action
+        q = self.critic(torch.from_numpy(observation).unsqueeze(0).float().to(device))
+        return int(q.argmax())
 
     def train(self, experience):
         # Q(s,a)=Q(s,a)-alpha*(r+gamma*max_a(Q(st+1,a))-Q(s,a))

@@ -3,6 +3,13 @@ import numpy as np
 from reinforcebot.config import SEGMENT_SIZE
 
 
+# class RewardReplayBuffer:
+#     def __init__(self, observation_space, segment_size=SEGMENT_SIZE, max_size=16):
+#         self.b = np.empty((max_size, segment_size, *observation_space), dtype=np.float32)
+#         self.w = np.empty((max_size, segment_size, *observation_space), dtype=np.float32)
+#         self.a = np.empty((max_size, segment_size), dtype=np.int8)
+
+
 class ExperienceReplayBuffer:
     def __init__(self, observation_space, max_size=int(2.5e5)):
         self.o = np.empty((max_size, *observation_space), dtype=np.float32)
@@ -28,8 +35,12 @@ class ExperienceReplayBuffer:
             self.n[indices],
         )
 
-    def random_segment(self, size=SEGMENT_SIZE):
-        pass
+    def sample_segment(self, size=SEGMENT_SIZE):
+        start = np.random.randint(0, self.size - size)
+        stop = start + size
+        o = self.o[start:stop]
+        a = self.a[start:stop]
+        return o, a
 
 
 class DynamicExperienceReplayBuffer(ExperienceReplayBuffer):

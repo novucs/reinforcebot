@@ -5,7 +5,7 @@ import gi
 from torchvision.transforms.functional import resize
 
 from reinforcebot.config import FRAME_DISPLAY_SIZE, FRAME_SIZE, OBSERVATION_SPACE
-from reinforcebot.experience_replay_buffer import ExperienceReplayBuffer
+from reinforcebot.replay_buffer import ExperienceReplayBuffer
 from reinforcebot.messaging import notify
 
 gi.require_version("Gtk", "3.0")

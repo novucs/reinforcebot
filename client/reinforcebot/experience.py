@@ -10,7 +10,7 @@ from torchvision.transforms.functional import resize
 from reinforcebot import reward
 from reinforcebot.agent import Agent
 from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE, ENSEMBLE_SIZE, STEP_SECONDS
-from reinforcebot.experience_replay_buffer import DynamicExperienceReplayBuffer
+from reinforcebot.replay_buffer import DynamicExperienceReplayBuffer
 from reinforcebot.messaging import notify
 
 
@@ -123,7 +123,7 @@ def handover_control(screen_recorder, action_mapping, buffer):
     pressed_keys = set()
     previous_frame = np.zeros(FRAME_SIZE)
     frame = convert_frame(screen_recorder.screenshot())
-    ensemble = reward.Ensemble(OBSERVATION_SPACE, ENSEMBLE_SIZE)
+    ensemble = reward.Ensemble(OBSERVATION_SPACE, len(action_mapping), ENSEMBLE_SIZE)
 
     while True:
         if Key.esc.value.vk in keyboard_recorder.read():
@@ -151,7 +151,7 @@ def handover_control(screen_recorder, action_mapping, buffer):
 
         o, a, n = buffer.read()
         with torch.no_grad():
-            r = ensemble.predict(o).numpy()
+            r = ensemble.predict(o, a).numpy()
         d = np.zeros(a.shape, dtype=np.float32)
         agent.train((o, a, r, n, d))
 
