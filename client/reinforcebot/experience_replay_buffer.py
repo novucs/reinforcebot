@@ -1,5 +1,7 @@
 import numpy as np
 
+from reinforcebot.config import SEGMENT_SIZE
+
 
 class ExperienceReplayBuffer:
     def __init__(self, observation_space, max_size=int(2.5e5)):
@@ -25,6 +27,9 @@ class ExperienceReplayBuffer:
             self.a[indices],
             self.n[indices],
         )
+
+    def random_segment(self, size=SEGMENT_SIZE):
+        pass
 
 
 class DynamicExperienceReplayBuffer(ExperienceReplayBuffer):

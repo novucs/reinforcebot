@@ -9,7 +9,7 @@ from torchvision.transforms.functional import resize
 
 from reinforcebot import reward
 from reinforcebot.agent import Agent
-from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE, ENSEMBLE_SIZE
+from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE, ENSEMBLE_SIZE, STEP_SECONDS
 from reinforcebot.experience_replay_buffer import DynamicExperienceReplayBuffer
 from reinforcebot.messaging import notify
 
@@ -58,7 +58,7 @@ def record_new_user_experience(screen_recorder):
 
     while True:
         observation = np.stack((previous_frame, frame))
-        time.sleep(0.1)
+        time.sleep(STEP_SECONDS)
         keys = keyboard_recorder.read()
 
         if Key.esc.value.vk in keys:
@@ -89,7 +89,7 @@ def record_user_experience(screen_recorder, action_mapping, buffer):
 
     while True:
         observation = np.stack((previous_frame, frame))
-        time.sleep(0.1)
+        time.sleep(STEP_SECONDS)
         keys = keyboard_recorder.read()
 
         if Key.esc.value.vk in keys:
@@ -141,7 +141,7 @@ def handover_control(screen_recorder, action_mapping, buffer):
         for key in pressed_keys:
             controller.press(KeyCode.from_vk(key))
 
-        time.sleep(0.1)
+        time.sleep(STEP_SECONDS)
 
         next_frame = convert_frame(screen_recorder.screenshot())
         next_observation = np.stack((frame, next_frame))
