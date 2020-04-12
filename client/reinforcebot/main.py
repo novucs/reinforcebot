@@ -48,7 +48,7 @@ class App:
 
     def on_record_clicked(self):
         if not self.screen_recorder.running:
-            notify('You select an area of your screen to record')
+            notify('You must select an area of your screen to record')
             return
 
         def record():
@@ -61,7 +61,7 @@ class App:
 
     def on_handover_control_clicked(self):
         if not self.screen_recorder.running:
-            notify('You select an area of your screen to record')
+            notify('You  must select an area of your screen to record')
             return
 
         if not self.action_mapping:

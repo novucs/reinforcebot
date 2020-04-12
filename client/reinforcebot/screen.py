@@ -59,7 +59,7 @@ def _limit_bounds(ox, oy, ow, oh):
     height = min(geometry.height - y, height)
 
     if ox != x or oy != y or ow != width or oh != height:
-        print('Warning: The window captured is not entirely visible')
+        notify('Warning: The window captured is not entirely visible')
 
     return x, y, width, height
 
