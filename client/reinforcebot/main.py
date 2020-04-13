@@ -1,4 +1,4 @@
-from threading import Thread
+from threading import Lock, Thread
 
 import cairo
 import gi
@@ -6,14 +6,14 @@ from torchvision.transforms.functional import resize
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
-from gi.repository import Gtk, Gdk
+from gi.repository import Gdk, GLib, Gtk
 
-from reinforcebot import screen, reward
-from reinforcebot.agent import Agent
-from reinforcebot.config import ENSEMBLE_SIZE, FRAME_DISPLAY_SIZE, FRAME_SIZE, OBSERVATION_SPACE
-from reinforcebot.experience import record_new_user_experience, handover_control, record_user_experience
+from reinforcebot import screen
+from reinforcebot.agent_profile import AgentProfile
+from reinforcebot.config import FRAME_DISPLAY_SIZE, FRAME_SIZE
+from reinforcebot.experience import handover_control, record_new_user_experience, record_user_experience
+from reinforcebot.human_preference_chooser import HumanPreferenceChooser
 from reinforcebot.messaging import notify
-from reinforcebot.replay_buffer import ExperienceReplayBuffer, RewardReplayBuffer
 
 
 # handover control F1
@@ -21,35 +21,26 @@ from reinforcebot.replay_buffer import ExperienceReplayBuffer, RewardReplayBuffe
 # reward shaping F3
 # stop recording F4
 
-class AgentConfig:
-    def __init__(self):
-        self.initialised = False
-        self.agent = None
-        self.action_mapping = None
-        self.user_experience = None
-        self.agent_experience = None
-        self.reward_ensemble = None
-        self.reward_buffer = None
-
-    def load_initial_user_experience(self, action_mapping, user_experience):
-        if self.initialised:
-            raise ValueError('Agents cannot redefine their action space, a new agent must be created instead')
-
-        self.action_mapping = action_mapping
-        self.user_experience = user_experience
-        self.agent_experience = ExperienceReplayBuffer(OBSERVATION_SPACE)
-        self.reward_ensemble = reward.Ensemble(OBSERVATION_SPACE, len(self.action_mapping), ENSEMBLE_SIZE)
-        self.reward_buffer = RewardReplayBuffer(OBSERVATION_SPACE)
-        self.agent = Agent(OBSERVATION_SPACE, len(action_mapping))
-        self.initialised = True
-
 
 class App:
-    def __init__(self, builder, window):
+    def __init__(self, builder):
         self.builder = builder
-        self.window = window
+        self.builder.get_object('select-area-button') \
+            .connect("clicked", lambda *_: self.on_select_area_clicked(), None)
+        self.builder.get_object('select-window-button') \
+            .connect("clicked", lambda *_: self.on_select_window_clicked(), None)
+        self.builder.get_object('record-button') \
+            .connect("clicked", lambda *_: self.on_record_clicked(), None)
+        self.builder.get_object('handover-control-button') \
+            .connect("clicked", lambda *_: self.on_handover_control_clicked(), None)
+
+        self.window = self.builder.get_object("detail")
+        self.window.set_title("reinforcebot")
+        self.window.connect("destroy", Gtk.main_quit)
+        self.window.show_all()
+
         self.screen_recorder = screen.Recorder()
-        self.agent_config = AgentConfig()
+        self.agent_profile = AgentProfile()
 
     def on_select_window_clicked(self):
         self.window.hide()
@@ -80,11 +71,11 @@ class App:
 
         def record():
             notify('Recording has begun. Press ESC to stop.')
-            if not self.agent_config.initialised:
-                record_new_user_experience(self.screen_recorder, self.agent_config)
+            if not self.agent_profile.initialised:
+                record_new_user_experience(self.screen_recorder, self.agent_profile)
                 notify('Successfully saved user experience with new action set')
             else:
-                record_user_experience(self.screen_recorder, self.agent_config)
+                record_user_experience(self.screen_recorder, self.agent_profile)
                 notify('Successfully saved user experience')
 
         thread = Thread(target=record)
@@ -95,31 +86,43 @@ class App:
             notify('You  must select an area of your screen to record')
             return
 
-        if not self.agent_config.initialised:
+        if not self.agent_profile.initialised:
             notify('You must record experience yourself to let the agent know what buttons to press')
             return
 
         def control():
-            notify('Your agent is now controlling the keyboard. Press ESC to stop.')
-            handover_control(self.screen_recorder, self.agent_config)
+            notify('Your agent is now controlling the keyboard. Press ESC to stop. Press F3 to manage rewards.')
+            self.agent_profile.loading_lock.acquire()  # wait until agent config has loaded
+            self.agent_profile.loading_lock.release()
+            handover_control(self.screen_recorder, self.agent_profile, self.open_preference_chooser)
             notify('Agent control has been lifted')
 
         thread = Thread(target=control)
         thread.start()
 
+    def open_preference_chooser(self):
+        init_lock = Lock()
+        done_lock = Lock()
+
+        def open_chooser():
+            HumanPreferenceChooser(self.builder, self.agent_profile, done_lock)
+            init_lock.release()
+            return False
+
+        init_lock.acquire()
+        GLib.idle_add(open_chooser)
+
+        init_lock.acquire()  # wait until human preference chooser has initialised (acquires done_lock)
+        init_lock.release()
+
+        done_lock.acquire()  # wait until human has made a choice
+        done_lock.release()
+
 
 def main():
     builder = Gtk.Builder()
     builder.add_from_file("main.glade")
-    window = builder.get_object("detail")
-    window.set_title("reinforcebot")
-    window.connect("destroy", Gtk.main_quit)
-    window.show_all()
-    app = App(builder, window)
-    builder.get_object('select-area-button').connect("clicked", lambda *_: app.on_select_area_clicked(), None)
-    builder.get_object('select-window-button').connect("clicked", lambda *_: app.on_select_window_clicked(), None)
-    builder.get_object('record-button').connect("clicked", lambda *_: app.on_record_clicked(), None)
-    builder.get_object('handover-control-button').connect("clicked", lambda *_: app.on_handover_control_clicked(), None)
+    App(builder)
     Gtk.main()
 
 

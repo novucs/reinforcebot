@@ -18,13 +18,19 @@
         <property name="can_focus">False</property>
         <property name="orientation">vertical</property>
         <child>
-          <placeholder/>
-        </child>
-        <child>
           <object class="GtkLabel">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="margin_left">10</property>
+            <property name="margin_right">10</property>
+            <property name="margin_top">10</property>
+            <property name="margin_bottom">10</property>
             <property name="label" translatable="yes">In which video is the agent performing best?</property>
+            <attributes>
+              <attribute name="weight" value="semibold"/>
+              <attribute name="variant" value="normal"/>
+              <attribute name="scale" value="1.25"/>
+            </attributes>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -46,7 +52,14 @@
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="margin_left">10</property>
+                    <property name="margin_right">10</property>
+                    <property name="margin_top">10</property>
+                    <property name="margin_bottom">10</property>
                     <property name="label" translatable="yes">Video 1</property>
+                    <attributes>
+                      <attribute name="weight" value="semibold"/>
+                    </attributes>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -55,11 +68,15 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkImage">
+                  <object class="GtkImage" id="preview-video1">
                     <property name="width_request">256</property>
                     <property name="height_request">256</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="margin_left">10</property>
+                    <property name="margin_right">10</property>
+                    <property name="margin_top">10</property>
+                    <property name="margin_bottom">10</property>
                     <property name="stock">gtk-missing-image</property>
                   </object>
                   <packing>
@@ -79,7 +96,15 @@
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="margin_left">10</property>
+                <property name="margin_right">10</property>
+                <property name="margin_top">10</property>
+                <property name="margin_bottom">10</property>
                 <property name="label" translatable="yes">vs</property>
+                <attributes>
+                  <attribute name="weight" value="bold"/>
+                  <attribute name="scale" value="1.25"/>
+                </attributes>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -96,7 +121,14 @@
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="margin_left">10</property>
+                    <property name="margin_right">10</property>
+                    <property name="margin_top">10</property>
+                    <property name="margin_bottom">10</property>
                     <property name="label" translatable="yes">Video 2</property>
+                    <attributes>
+                      <attribute name="weight" value="semibold"/>
+                    </attributes>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -105,11 +137,15 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkImage">
+                  <object class="GtkImage" id="preview-video2">
                     <property name="width_request">256</property>
                     <property name="height_request">256</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="margin_left">10</property>
+                    <property name="margin_right">10</property>
+                    <property name="margin_top">10</property>
+                    <property name="margin_bottom">10</property>
                     <property name="stock">gtk-missing-image</property>
                   </object>
                   <packing>
@@ -136,6 +172,10 @@
           <object class="GtkBox">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="margin_left">10</property>
+            <property name="margin_right">10</property>
+            <property name="margin_top">10</property>
+            <property name="margin_bottom">10</property>
             <property name="homogeneous">True</property>
             <child>
               <object class="GtkButton" id="button-video1">
@@ -151,7 +191,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="button-video-neither">
+              <object class="GtkButton" id="button-same">
                 <property name="label" translatable="yes">They are the same</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -182,9 +222,6 @@
             <property name="fill">True</property>
             <property name="position">3</property>
           </packing>
-        </child>
-        <child>
-          <placeholder/>
         </child>
       </object>
     </child>

@@ -46,7 +46,7 @@ def convert_frame(frame):
     return np.array(frame)
 
 
-def record_new_user_experience(screen_recorder, agent_config):
+def record_new_user_experience(screen_recorder, agent_profile):
     keyboard_recorder = KeyboardBuffer()
     keyboard_recorder.start()
     buffer = DynamicExperienceReplayBuffer(OBSERVATION_SPACE)
@@ -70,11 +70,11 @@ def record_new_user_experience(screen_recorder, agent_config):
         previous_frame, frame = frame, next_frame
 
     keyboard_recorder.stop()
-    agent_config.load_initial_user_experience(*buffer.build())
+    agent_profile.load_initial_user_experience(*buffer.build())
 
 
-def record_user_experience(screen_recorder, agent_config):
-    action_mapping, buffer = agent_config.action_mapping, agent_config.user_experience
+def record_user_experience(screen_recorder, agent_profile):
+    action_mapping, buffer = agent_profile.action_mapping, agent_profile.user_experience
 
     keyboard_recorder = KeyboardBuffer()
     keyboard_recorder.start()
@@ -107,10 +107,10 @@ def record_user_experience(screen_recorder, agent_config):
     keyboard_recorder.stop()
 
 
-def handover_control(screen_recorder, agent_config):
+def handover_control(screen_recorder, agent_profile, choose_preference):
     agent, action_mapping, experience_buffer, reward_ensemble, reward_buffer = \
-        agent_config.agent, agent_config.action_mapping, agent_config.agent_experience, \
-        agent_config.reward_ensemble, agent_config.reward_buffer
+        agent_profile.agent, agent_profile.action_mapping, agent_profile.agent_experience, \
+        agent_profile.reward_ensemble, agent_profile.reward_buffer
 
     keyboard_recorder = KeyboardBuffer()
     keyboard_recorder.start()
@@ -135,24 +135,23 @@ def handover_control(screen_recorder, agent_config):
             d = np.zeros(a.shape, dtype=np.float32)
             agent.train((o, a, r, n, d))
 
-            # TODO: Switch out dummy reward buffer sampling with user controlled
-            #       sampling
-            s1 = experience_buffer.sample_segment()
-            s2 = experience_buffer.sample_segment()
-
-            reward_buffer.write(s1, s2, 1)
-
-            s1, s2, p = reward_buffer.read()
-            reward_ensemble.train(s1, s2, p)
+            if reward_buffer.size > 0:
+                s1, s2, p = reward_buffer.read()
+                reward_ensemble.train(s1, s2, p)
 
     train_thread = Thread(target=train)
     train_thread.start()
     step_start = time.time()
 
     while True:
-        if Key.esc.value.vk in keyboard_recorder.read():
+        user_pressed_keys = keyboard_recorder.read()
+        if Key.esc.value.vk in user_pressed_keys:
             running = False
             break
+
+        if Key.f3.value.vk in user_pressed_keys:
+            choose_preference()
+            keyboard_recorder.read()
 
         step += 1
         observation = np.stack((previous_frame, frame))

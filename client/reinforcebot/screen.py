@@ -33,10 +33,11 @@ class Recorder:
 
     def _record(self):
         if not self.running:
-            return
+            return False
 
         self.callback(self.screenshot())
         GLib.idle_add(self._record)
+        return False
 
     def screenshot(self):
         with mss.mss() as sct:
