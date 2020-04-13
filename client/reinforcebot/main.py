@@ -95,7 +95,7 @@ class App:
 def main():
     builder = Gtk.Builder()
     builder.add_from_file("main.glade")
-    window = builder.get_object("window1")
+    window = builder.get_object("detail")
     window.set_title("reinforcebot")
     window.connect("destroy", Gtk.main_quit)
     window.show_all()
