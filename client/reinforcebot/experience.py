@@ -8,12 +8,9 @@ from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
 from torchvision.transforms.functional import resize
 
-from reinforcebot import reward
-from reinforcebot.agent import Agent
-from reinforcebot.config import ENSEMBLE_SIZE, FRAME_SIZE, OBSERVATION_SPACE, SEGMENT_SIZE, STEP_SECONDS, \
+from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE, SEGMENT_SIZE, STEP_SECONDS, \
     UPDATE_TARGET_PARAMETERS_STEPS
-from reinforcebot.messaging import notify
-from reinforcebot.replay_buffer import DynamicExperienceReplayBuffer, RewardReplayBuffer
+from reinforcebot.replay_buffer import DynamicExperienceReplayBuffer
 
 
 class KeyboardBuffer:
@@ -49,9 +46,7 @@ def convert_frame(frame):
     return np.array(frame)
 
 
-def record_new_user_experience(screen_recorder):
-    notify('Recording has begun. Press ESC to stop.')
-
+def record_new_user_experience(screen_recorder, agent_config):
     keyboard_recorder = KeyboardBuffer()
     keyboard_recorder.start()
     buffer = DynamicExperienceReplayBuffer(OBSERVATION_SPACE)
@@ -75,13 +70,11 @@ def record_new_user_experience(screen_recorder):
         previous_frame, frame = frame, next_frame
 
     keyboard_recorder.stop()
-    action_mapping, buffer = buffer.build()
-    notify('Successfully saved user experience with new action set')
-    return action_mapping, buffer
+    agent_config.load_initial_user_experience(*buffer.build())
 
 
-def record_user_experience(screen_recorder, action_mapping, buffer):
-    notify('Recording has begun. Press ESC to stop.')
+def record_user_experience(screen_recorder, agent_config):
+    action_mapping, buffer = agent_config.action_mapping, agent_config.user_experience
 
     keyboard_recorder = KeyboardBuffer()
     keyboard_recorder.start()
@@ -112,15 +105,15 @@ def record_user_experience(screen_recorder, action_mapping, buffer):
         previous_frame, frame = frame, next_frame
 
     keyboard_recorder.stop()
-    notify('Successfully saved user experience')
 
 
-def handover_control(screen_recorder, action_mapping, experience_buffer, reward_ensemble, reward_buffer):
-    notify('Your agent is now controlling the keyboard. Press ESC to stop.')
+def handover_control(screen_recorder, agent_config):
+    agent, action_mapping, experience_buffer, reward_ensemble, reward_buffer = \
+        agent_config.agent, agent_config.action_mapping, agent_config.agent_experience, \
+        agent_config.reward_ensemble, agent_config.reward_buffer
 
     keyboard_recorder = KeyboardBuffer()
     keyboard_recorder.start()
-    agent = Agent(OBSERVATION_SPACE, len(action_mapping))
     controller = keyboard.Controller()
     pressed_keys = set()
     previous_frame = np.zeros(FRAME_SIZE)
@@ -189,4 +182,3 @@ def handover_control(screen_recorder, action_mapping, experience_buffer, reward_
         controller.release(KeyCode.from_vk(key))
 
     keyboard_recorder.stop()
-    notify('Agent control has been lifted')
