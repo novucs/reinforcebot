@@ -9,9 +9,10 @@ from torchvision.transforms.functional import resize
 
 from reinforcebot import reward
 from reinforcebot.agent import Agent
-from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE, ENSEMBLE_SIZE, STEP_SECONDS, SEGMENT_SIZE
-from reinforcebot.replay_buffer import DynamicExperienceReplayBuffer, RewardReplayBuffer
+from reinforcebot.config import ENSEMBLE_SIZE, FRAME_SIZE, OBSERVATION_SPACE, SEGMENT_SIZE, STEP_SECONDS, \
+    UPDATE_TARGET_PARAMETERS_STEPS
 from reinforcebot.messaging import notify
+from reinforcebot.replay_buffer import DynamicExperienceReplayBuffer, RewardReplayBuffer
 
 
 class KeyboardBuffer:
@@ -125,11 +126,13 @@ def handover_control(screen_recorder, action_mapping, experience_buffer):
     frame = convert_frame(screen_recorder.screenshot())
     ensemble = reward.Ensemble(OBSERVATION_SPACE, len(action_mapping), ENSEMBLE_SIZE)
     reward_buffer = RewardReplayBuffer(OBSERVATION_SPACE)
+    step = 0
 
     while True:
         if Key.esc.value.vk in keyboard_recorder.read():
             break
 
+        step += 1
         observation = np.stack((previous_frame, frame))
         action = agent.act(observation)
 
@@ -166,6 +169,9 @@ def handover_control(screen_recorder, action_mapping, experience_buffer):
 
             s1, s2, p = reward_buffer.read()
             ensemble.train(s1, s2, p)
+
+        if step % UPDATE_TARGET_PARAMETERS_STEPS == 0:
+            agent.critic_target.load_state_dict(agent.critic.state_dict())
 
     for key in pressed_keys:
         controller.release(KeyCode.from_vk(key))
