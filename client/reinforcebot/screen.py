@@ -13,6 +13,7 @@ class Recorder:
         self.coordinates = {}
         self.callback = None
         self.running = False
+        self.cache = None
 
     def stop(self):
         self.running = False
@@ -43,7 +44,8 @@ class Recorder:
                 screenshot = sct.grab(self.coordinates)
             except mss.exception.ScreenShotError:
                 raise ValueError(f'Window is off screen. Coordinates: {self.coordinates}')
-        return Image.frombytes('RGB', screenshot.size, screenshot.bgra, 'raw', 'BGRX')
+        self.cache = Image.frombytes('RGB', screenshot.size, screenshot.bgra, 'raw', 'BGRX')
+        return self.cache
 
 
 def _limit_bounds(ox, oy, ow, oh):

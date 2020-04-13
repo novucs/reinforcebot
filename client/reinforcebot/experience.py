@@ -1,5 +1,6 @@
 import itertools
 import time
+from threading import Thread
 
 import numpy as np
 import torch
@@ -55,7 +56,7 @@ def record_new_user_experience(screen_recorder):
     keyboard_recorder.start()
     buffer = DynamicExperienceReplayBuffer(OBSERVATION_SPACE)
     previous_frame = np.zeros(FRAME_SIZE)
-    frame = convert_frame(screen_recorder.screenshot())
+    frame = convert_frame(screen_recorder.cache)
 
     while True:
         observation = np.stack((previous_frame, frame))
@@ -67,7 +68,7 @@ def record_new_user_experience(screen_recorder):
 
         keys -= {Key.esc.value.vk, *range(Key.f1.value.vk, Key.f20.value.vk)}
 
-        next_frame = convert_frame(screen_recorder.screenshot())
+        next_frame = convert_frame(screen_recorder.cache)
         next_observation = np.stack((frame, next_frame))
         buffer.write(observation, keys, next_observation)
 
@@ -86,7 +87,7 @@ def record_user_experience(screen_recorder, action_mapping, buffer):
     keyboard_recorder.start()
     allowed_keys = set(itertools.chain(*action_mapping.values()))
     previous_frame = np.zeros(FRAME_SIZE)
-    frame = convert_frame(screen_recorder.screenshot())
+    frame = convert_frame(screen_recorder.cache)
 
     while True:
         observation = np.stack((previous_frame, frame))
@@ -104,7 +105,7 @@ def record_user_experience(screen_recorder, action_mapping, buffer):
 
         action = next((a for a, k in action_mapping.items() if keys == k), 0)
 
-        next_frame = convert_frame(screen_recorder.screenshot())
+        next_frame = convert_frame(screen_recorder.cache)
         next_observation = np.stack((frame, next_frame))
         buffer.write(observation, action, next_observation)
 
@@ -123,13 +124,43 @@ def handover_control(screen_recorder, action_mapping, experience_buffer):
     controller = keyboard.Controller()
     pressed_keys = set()
     previous_frame = np.zeros(FRAME_SIZE)
-    frame = convert_frame(screen_recorder.screenshot())
+    frame = convert_frame(screen_recorder.cache)
     ensemble = reward.Ensemble(OBSERVATION_SPACE, len(action_mapping), ENSEMBLE_SIZE)
     reward_buffer = RewardReplayBuffer(OBSERVATION_SPACE)
     step = 0
+    running = True
+
+    def train():
+        while running:
+            time.sleep(1)
+
+            if experience_buffer.size < SEGMENT_SIZE:
+                continue
+
+            o, a, n = experience_buffer.read(8)
+
+            with torch.no_grad():
+                r = ensemble.predict(o, a).numpy()
+
+            d = np.zeros(a.shape, dtype=np.float32)
+            agent.train((o, a, r, n, d))
+
+            # TODO: Switch out dummy reward buffer sampling with user controlled
+            #       sampling
+            s1 = experience_buffer.sample_segment()
+            s2 = experience_buffer.sample_segment()
+
+            reward_buffer.write(s1, s2, 1)
+
+            s1, s2, p = reward_buffer.read(1)
+            ensemble.train(s1, s2, p)
+
+    train_thread = Thread(target=train)
+    train_thread.start()
 
     while True:
         if Key.esc.value.vk in keyboard_recorder.read():
+            running = False
             break
 
         step += 1
@@ -147,28 +178,10 @@ def handover_control(screen_recorder, action_mapping, experience_buffer):
 
         time.sleep(STEP_SECONDS)
 
-        next_frame = convert_frame(screen_recorder.screenshot())
+        next_frame = convert_frame(screen_recorder.cache)
         next_observation = np.stack((frame, next_frame))
         experience_buffer.write(observation, action, next_observation)
-
         previous_frame, frame = frame, next_frame
-
-        o, a, n = experience_buffer.read()
-        with torch.no_grad():
-            r = ensemble.predict(o, a).numpy()
-        d = np.zeros(a.shape, dtype=np.float32)
-        agent.train((o, a, r, n, d))
-
-        if experience_buffer.size > SEGMENT_SIZE:
-            # TODO: Switch out dummy reward buffer sampling with user controlled
-            #       sampling
-            s1 = experience_buffer.sample_segment()
-            s2 = experience_buffer.sample_segment()
-
-            reward_buffer.write(s1, s2, 1)
-
-            s1, s2, p = reward_buffer.read()
-            ensemble.train(s1, s2, p)
 
         if step % UPDATE_TARGET_PARAMETERS_STEPS == 0:
             agent.critic_target.load_state_dict(agent.critic.state_dict())
