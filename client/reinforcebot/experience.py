@@ -132,12 +132,11 @@ def handover_control(screen_recorder, action_mapping, experience_buffer):
 
     def train():
         while running:
-            time.sleep(1)
-
             if experience_buffer.size < SEGMENT_SIZE:
+                time.sleep(1)
                 continue
 
-            o, a, n = experience_buffer.read(8)
+            o, a, n = experience_buffer.read()
 
             with torch.no_grad():
                 r = ensemble.predict(o, a).numpy()
@@ -152,11 +151,12 @@ def handover_control(screen_recorder, action_mapping, experience_buffer):
 
             reward_buffer.write(s1, s2, 1)
 
-            s1, s2, p = reward_buffer.read(1)
+            s1, s2, p = reward_buffer.read()
             ensemble.train(s1, s2, p)
 
     train_thread = Thread(target=train)
     train_thread.start()
+    step_start = time.time()
 
     while True:
         if Key.esc.value.vk in keyboard_recorder.read():
@@ -176,7 +176,8 @@ def handover_control(screen_recorder, action_mapping, experience_buffer):
         for key in pressed_keys:
             controller.press(KeyCode.from_vk(key))
 
-        time.sleep(STEP_SECONDS)
+        time.sleep(max(0, STEP_SECONDS - (time.time() - step_start)))
+        step_start = time.time()
 
         next_frame = convert_frame(screen_recorder.cache)
         next_observation = np.stack((frame, next_frame))
