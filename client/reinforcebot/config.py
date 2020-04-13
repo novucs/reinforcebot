@@ -5,3 +5,5 @@ ENSEMBLE_SIZE = 5
 STEP_SECONDS = 0.1
 SEGMENT_SIZE = int(2 / STEP_SECONDS)
 UPDATE_TARGET_PARAMETERS_STEPS = 32
+BASE_URL = 'https://reinforcebot.novucs.net/'
+API_URL = BASE_URL + 'api/'

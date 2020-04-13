@@ -12,6 +12,11 @@ from reinforcebot.human_preference_chooser import HumanPreferenceChooser
 from reinforcebot.messaging import notify
 
 
+# handover control F1
+# toggle training F2
+# reward shaping F3
+# stop recording F4
+
 class AgentDetailPage:
     def __init__(self, builder):
         self.builder = builder
@@ -25,8 +30,9 @@ class AgentDetailPage:
             .connect("clicked", lambda *_: self.on_handover_control_clicked(), None)
 
         self.window = self.builder.get_object("detail")
-        self.window.set_title("reinforcebot")
+        self.window.set_title("ReinforceBot - Agent Detail")
         self.window.connect("destroy", Gtk.main_quit)
+        self.window.set_position(Gtk.WindowPosition.CENTER)
         self.window.show_all()
 
         self.screen_recorder = screen.Recorder()
