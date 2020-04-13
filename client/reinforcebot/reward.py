@@ -53,6 +53,7 @@ class Ensemble:
         for predictor in self.predictors:
             optimiser = optim.Adam(predictor.parameters())
             optimiser.zero_grad()
+            loss = torch.zeros(1)
 
             for o1, a1, o2, a2, hp in zip(*segment1, *segment2, preference):
                 hp = float(hp)
@@ -60,9 +61,9 @@ class Ensemble:
                 s2 = predictor((torch.from_numpy(o2), torch.from_numpy(a2))).sum()
                 p1 = torch.exp(s1) / (torch.exp(s1) + torch.exp(s2))  # prob. segment 1 > segment 2
                 p2 = torch.exp(s2) / (torch.exp(s1) + torch.exp(s2))  # prob. segment 2 > segment 1
-                loss = - (hp * p1 + (1 - hp) * p2)
-                loss.backward()
+                loss += - (hp * p1 + (1 - hp) * p2)
 
+            loss.backward()
             for param in predictor.parameters():
                 param.grad.data.clamp_(-1, 1)
             optimiser.step()
