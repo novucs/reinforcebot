@@ -9,7 +9,7 @@ class RewardReplayBuffer:
         self.a1 = np.empty((max_size, segment_size), dtype=np.int8)
         self.o2 = np.empty((max_size, segment_size, *observation_space), dtype=np.float32)
         self.a2 = np.empty((max_size, segment_size), dtype=np.int8)
-        self.p = np.empty((max_size, segment_size), dtype=np.float32)
+        self.p = np.empty((max_size,), dtype=np.float32)
         self.index = 0
         self.size = 0
         self.max_size = max_size

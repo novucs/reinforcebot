@@ -1,7 +1,6 @@
-import numpy as np
 import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import nn, optim
 
 
 class Predictor(nn.Module):
@@ -27,12 +26,13 @@ class Predictor(nn.Module):
 
     def forward(self, x):
         observation, action = x
+        action_encoded = torch.zeros(action.shape[0], self.action_space)
+        action_encoded[torch.arange(action.shape[0]), action.long()] = 1
+
         x = F.relu(self.bn1(self.conv1(observation)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
-        one_hot_actions = np.zeros((action.shape[0], self.action_space))
-        one_hot_actions[np.arange(action.shape[0]), action.numpy()] = 1
-        x = torch.from_numpy(np.c_[one_hot_actions, x.view(x.size(0), -1)]).type(torch.float)
+        x = torch.cat((action_encoded, x.view(x.size(0), -1)), dim=1)
         return self.fc1(x).squeeze()
 
 
@@ -50,5 +50,19 @@ class Ensemble:
         return mean_reward
 
     def train(self, segment1, segment2, preference):
-        # TODO: Train
-        pass
+        for predictor in self.predictors:
+            optimiser = optim.Adam(predictor.parameters())
+            optimiser.zero_grad()
+
+            for o1, a1, o2, a2, hp in zip(*segment1, *segment2, preference):
+                hp = float(hp)
+                s1 = predictor((torch.from_numpy(o1), torch.from_numpy(a1))).sum()
+                s2 = predictor((torch.from_numpy(o2), torch.from_numpy(a2))).sum()
+                p1 = torch.exp(s1) / (torch.exp(s1) + torch.exp(s2))  # prob. segment 1 > segment 2
+                p2 = torch.exp(s2) / (torch.exp(s1) + torch.exp(s2))  # prob. segment 2 > segment 1
+                loss = - (hp * p1 + (1 - hp) * p2)
+                loss.backward()
+
+            for param in predictor.parameters():
+                param.grad.data.clamp_(-1, 1)
+            optimiser.step()
