@@ -115,7 +115,7 @@ def record_user_experience(screen_recorder, action_mapping, buffer):
     notify('Successfully saved user experience')
 
 
-def handover_control(screen_recorder, action_mapping, experience_buffer):
+def handover_control(screen_recorder, action_mapping, experience_buffer, reward_ensemble, reward_buffer):
     notify('Your agent is now controlling the keyboard. Press ESC to stop.')
 
     keyboard_recorder = KeyboardBuffer()
@@ -125,8 +125,6 @@ def handover_control(screen_recorder, action_mapping, experience_buffer):
     pressed_keys = set()
     previous_frame = np.zeros(FRAME_SIZE)
     frame = convert_frame(screen_recorder.cache)
-    ensemble = reward.Ensemble(OBSERVATION_SPACE, len(action_mapping), ENSEMBLE_SIZE)
-    reward_buffer = RewardReplayBuffer(OBSERVATION_SPACE)
     step = 0
     running = True
 
@@ -139,7 +137,7 @@ def handover_control(screen_recorder, action_mapping, experience_buffer):
             o, a, n = experience_buffer.read()
 
             with torch.no_grad():
-                r = ensemble.predict(o, a).numpy()
+                r = reward_ensemble.predict(o, a).numpy()
 
             d = np.zeros(a.shape, dtype=np.float32)
             agent.train((o, a, r, n, d))
@@ -152,7 +150,7 @@ def handover_control(screen_recorder, action_mapping, experience_buffer):
             reward_buffer.write(s1, s2, 1)
 
             s1, s2, p = reward_buffer.read()
-            ensemble.train(s1, s2, p)
+            reward_ensemble.train(s1, s2, p)
 
     train_thread = Thread(target=train)
     train_thread.start()

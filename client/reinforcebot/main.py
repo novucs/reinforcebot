@@ -4,15 +4,15 @@ import cairo
 import gi
 from torchvision.transforms.functional import resize
 
-from reinforcebot.config import FRAME_DISPLAY_SIZE, FRAME_SIZE, OBSERVATION_SPACE
-from reinforcebot.replay_buffer import ExperienceReplayBuffer
+from reinforcebot.config import ENSEMBLE_SIZE, FRAME_DISPLAY_SIZE, FRAME_SIZE, OBSERVATION_SPACE
 from reinforcebot.messaging import notify
+from reinforcebot.replay_buffer import ExperienceReplayBuffer, RewardReplayBuffer
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 from gi.repository import Gtk, Gdk
 
-from reinforcebot import screen
+from reinforcebot import screen, reward
 from reinforcebot.experience import record_new_user_experience, handover_control, record_user_experience
 
 
@@ -29,6 +29,8 @@ class App:
         self.action_mapping = None
         self.user_experience = None
         self.agent_experience = None
+        self.reward_ensemble = None
+        self.reward_buffer = None
 
     def on_select_window_clicked(self):
         self.window.hide()
@@ -80,8 +82,11 @@ class App:
         def control():
             if self.agent_experience is None:
                 self.agent_experience = ExperienceReplayBuffer(OBSERVATION_SPACE)
+                self.reward_ensemble = reward.Ensemble(OBSERVATION_SPACE, len(self.action_mapping), ENSEMBLE_SIZE)
+                self.reward_buffer = RewardReplayBuffer(OBSERVATION_SPACE)
 
-            handover_control(self.screen_recorder, self.action_mapping, self.agent_experience)
+            handover_control(self.screen_recorder, self.action_mapping,
+                             self.agent_experience, self.reward_ensemble, self.reward_buffer)
 
         thread = Thread(target=control)
         thread.start()
