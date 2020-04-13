@@ -1,6 +1,6 @@
 from gi.repository import Gtk
 
-from reinforcebot.page import AgentDetailPage
+from reinforcebot.page import agent_list
 
 
 class LoginPage:
@@ -22,4 +22,4 @@ class LoginPage:
 
     def on_continue_offline_clicked(self):
         self.window.hide()
-        AgentDetailPage(self.builder)
+        agent_list.AgentListPage(self.builder)

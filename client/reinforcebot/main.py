@@ -7,8 +7,8 @@ def main():
     from gi.repository import Gtk
     builder = Gtk.Builder()
     builder.add_from_file("main.glade")
-    from reinforcebot.page import LoginPage
-    LoginPage(builder)
+    from reinforcebot.page import login
+    login.LoginPage(builder)
     Gtk.main()
 
 

@@ -10,16 +10,18 @@ from reinforcebot.config import FRAME_DISPLAY_SIZE, FRAME_SIZE
 from reinforcebot.experience import handover_control, record_new_user_experience, record_user_experience
 from reinforcebot.human_preference_chooser import HumanPreferenceChooser
 from reinforcebot.messaging import notify
-
-
 # handover control F1
 # toggle training F2
 # reward shaping F3
 # stop recording F4
+from reinforcebot.page import agent_list
+
 
 class AgentDetailPage:
     def __init__(self, builder):
         self.builder = builder
+        self.builder.get_object('back-to-agent-listing-button') \
+            .connect("clicked", lambda *_: self.on_agent_list_clicked(), None)
         self.builder.get_object('select-area-button') \
             .connect("clicked", lambda *_: self.on_select_area_clicked(), None)
         self.builder.get_object('select-window-button') \
@@ -37,6 +39,10 @@ class AgentDetailPage:
 
         self.screen_recorder = screen.Recorder()
         self.agent_profile = AgentProfile()
+
+    def on_agent_list_clicked(self):
+        self.window.hide()
+        agent_list.AgentListPage(self.builder)
 
     def on_select_window_clicked(self):
         self.window.hide()
