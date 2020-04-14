@@ -7,7 +7,7 @@ from torchvision.transforms.functional import resize
 
 from reinforcebot import screen
 from reinforcebot.agent_profile import AgentProfile
-from reinforcebot.config import FRAME_DISPLAY_SIZE, FRAME_SIZE
+from reinforcebot.config import FRAME_DISPLAY_SIZE, FRAME_SIZE, BASE_URL
 from reinforcebot.experience import handover_control, record_new_user_experience, record_user_experience
 from reinforcebot.human_preference_chooser import HumanPreferenceChooser
 from reinforcebot.messaging import notify
@@ -43,9 +43,21 @@ class AgentDetailPage:
         self.agent_profile = None
 
     def present(self, agent_profile):
-        # print('Displaying agent detail:\n', json.dumps({'agent': agent, 'author': author}, indent=2))
-        # self.agent_profile = AgentProfile.load(agent['name'], author)
         self.agent_profile = agent_profile
+        description = '\n'.join(self.agent_profile.description.strip().split('\n')[:16])
+        if len(description) > 256:
+            description = description[:256].strip() + '...'
+
+        self.builder.get_object('agent-name-label').set_text(self.agent_profile.name)
+        self.builder.get_object('agent-description-label').set_text(description)
+
+        if self.agent_profile.agent_id:
+            link = BASE_URL + f'agent/{self.agent_profile.agent_id}/'
+            self.builder.get_object('agent-link-label').set_label(link)
+            self.builder.get_object('agent-link-label').set_uri(link)
+            self.builder.get_object('read-more-label').show()
+            self.builder.get_object('agent-link-label').show()
+
         self.window.present()
 
     def on_agent_list_clicked(self):
