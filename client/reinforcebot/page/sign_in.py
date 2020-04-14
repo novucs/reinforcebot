@@ -1,7 +1,7 @@
 from gi.repository import Gtk
 
 
-class LoginPage:
+class SignInPage:
     def __init__(self, router, builder):
         self.router = router
         self.builder = builder
@@ -19,7 +19,7 @@ class LoginPage:
         self.window.present()
 
     def on_signin_clicked(self):
-        print('Login')
+        print('sign in')
 
     def on_continue_offline_clicked(self):
         self.window.hide()
