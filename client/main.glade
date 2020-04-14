@@ -574,7 +574,6 @@
           <object class="GtkBox">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="homogeneous">True</property>
             <child>
               <object class="GtkButton" id="back-to-agent-listing-button">
                 <property name="label" translatable="yes">← Back to agent listing</property>
@@ -583,13 +582,26 @@
                 <property name="receives_default">True</property>
                 <property name="halign">center</property>
                 <property name="margin_left">10</property>
-                <property name="margin_right">10</property>
                 <property name="margin_bottom">16</property>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparator">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="margin_left">16</property>
+                <property name="margin_right">16</property>
+                <property name="margin_bottom">16</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
               </packing>
             </child>
             <child>
@@ -602,17 +614,6 @@
                   <attribute name="weight" value="bold"/>
                   <attribute name="scale" value="1.25"/>
                 </attributes>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
               </object>
               <packing>
                 <property name="expand">False</property>

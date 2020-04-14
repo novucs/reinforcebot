@@ -1,4 +1,4 @@
-import json
+import time
 from threading import Lock, Thread
 
 import cairo
@@ -6,11 +6,10 @@ from gi.repository import Gdk, GLib, Gtk
 from torchvision.transforms.functional import resize
 
 from reinforcebot import screen
-from reinforcebot.agent_profile import AgentProfile
-from reinforcebot.config import FRAME_DISPLAY_SIZE, FRAME_SIZE, BASE_URL
+from reinforcebot.config import BASE_URL, FRAME_DISPLAY_SIZE, FRAME_SIZE
 from reinforcebot.experience import handover_control, record_new_user_experience, record_user_experience
 from reinforcebot.human_preference_chooser import HumanPreferenceChooser
-from reinforcebot.messaging import notify
+from reinforcebot.messaging import alert, notify
 
 
 # handover control F1
@@ -21,6 +20,7 @@ from reinforcebot.messaging import notify
 
 class AgentDetailPage:
     def __init__(self, app):
+        print('Created agent detail page')
         self.app = app
         self.builder = app.builder
         self.builder.get_object('back-to-agent-listing-button') \
@@ -41,6 +41,8 @@ class AgentDetailPage:
 
         self.screen_recorder = screen.Recorder()
         self.agent_profile = None
+        self.control_lock = Lock()
+        self.recording = False
 
     def present(self, agent_profile):
         self.agent_profile = agent_profile
@@ -65,10 +67,18 @@ class AgentDetailPage:
         self.app.router.route('agent_list')
 
     def on_select_window_clicked(self):
+        if self.recording:
+            alert(self.window, 'You cannot change the recorded area while recording')
+            return
+
         self.window.hide()
         screen.select_window(lambda *coordinates: self.capture(*coordinates))
 
     def on_select_area_clicked(self):
+        if self.recording:
+            alert(self.window, 'You cannot change the recorded area while recording')
+            return
+
         self.window.hide()
         screen.select_area(lambda *coordinates: self.capture(*coordinates))
 
@@ -87,40 +97,62 @@ class AgentDetailPage:
         self.builder.get_object('preview').set_from_pixbuf(pixbuf)
 
     def on_record_clicked(self):
+        if self.recording:
+            alert(self.window, 'Experience is already being recorded')
+            return
+
         if not self.screen_recorder.running:
-            notify('You must select an area of your screen to record')
+            alert(self.window, 'You must select an area of your screen to record')
             return
 
         def record():
+            self.control_lock.acquire()
+            self.recording = True
             notify('Recording has begun. Press ESC to stop.')
             if not self.agent_profile.initialised:
                 record_new_user_experience(self.screen_recorder, self.agent_profile)
-                notify('Successfully saved user experience with new action set')
+                GLib.idle_add(lambda: self.window.show())
+                alert(self.window, 'Successfully saved user experience with new action set')
             else:
                 record_user_experience(self.screen_recorder, self.agent_profile)
-                notify('Successfully saved user experience')
+                GLib.idle_add(lambda: self.window.show())
+                alert(self.window, 'Successfully saved user experience')
+            self.recording = False
             self.agent_profile.save()
+            self.control_lock.release()
 
+        self.window.hide()
         thread = Thread(target=record)
         thread.start()
 
     def on_handover_control_clicked(self):
+        if self.recording:
+            alert(self.window, 'Experience is already being recorded')
+            return
+
         if not self.screen_recorder.running:
-            notify('You  must select an area of your screen to record')
+            alert(self.window, 'You must select an area of your screen to record')
             return
 
         if not self.agent_profile.initialised:
-            notify('You must record experience yourself to let the agent know what buttons to press')
+            alert(self.window, 'You must record experience yourself to let the agent know what buttons to press')
             return
 
         def control():
+            self.control_lock.acquire()
+            self.recording = True
+            time.sleep(1)
             notify('Your agent is now controlling the keyboard. Press ESC to stop. Press F3 to manage rewards.')
             self.agent_profile.loading_lock.acquire()  # wait until agent config has loaded
             self.agent_profile.loading_lock.release()
             handover_control(self.screen_recorder, self.agent_profile, self.open_preference_chooser)
-            notify('Agent control has been lifted')
+            GLib.idle_add(lambda: self.window.show())
+            alert(self.window, 'Agent control has been lifted')
+            self.recording = False
             self.agent_profile.save()
+            self.control_lock.release()
 
+        self.window.hide()
         thread = Thread(target=control)
         thread.start()
 

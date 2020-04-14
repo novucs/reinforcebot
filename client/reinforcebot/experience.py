@@ -147,6 +147,7 @@ def handover_control(screen_recorder, agent_profile, choose_preference):
         user_pressed_keys = keyboard_recorder.read()
         if Key.esc.value.vk in user_pressed_keys:
             running = False
+            train_thread.join()
             break
 
         if Key.f3.value.vk in user_pressed_keys:
