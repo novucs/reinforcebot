@@ -10,11 +10,12 @@ from reinforcebot.config import FRAME_DISPLAY_SIZE, FRAME_SIZE
 from reinforcebot.experience import handover_control, record_new_user_experience, record_user_experience
 from reinforcebot.human_preference_chooser import HumanPreferenceChooser
 from reinforcebot.messaging import notify
+
+
 # handover control F1
 # toggle training F2
 # reward shaping F3
 # stop recording F4
-from reinforcebot.page import agent_list
 
 
 class AgentDetailPage:

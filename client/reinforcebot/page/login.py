@@ -1,7 +1,5 @@
 from gi.repository import Gtk
 
-from reinforcebot.page import agent_list
-
 
 class LoginPage:
     def __init__(self, router, builder):
