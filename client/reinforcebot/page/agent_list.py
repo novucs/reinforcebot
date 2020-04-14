@@ -105,14 +105,10 @@ class AgentListPage:
         self.search = search
 
         def debounce():
-            time.sleep(0.5)
-
-            def update_results():
-                self.fetch()
-                self.render()
-
+            time.sleep(0.2)
             if self.search == search:
-                GLib.idle_add(update_results)
+                self.fetch()
+                GLib.idle_add(self.render)
 
         self.query_pool.submit(debounce)
 
