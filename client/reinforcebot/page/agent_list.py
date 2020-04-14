@@ -1,9 +1,10 @@
 import math
 import re
+import time
 from concurrent.futures.thread import ThreadPoolExecutor
 
 import requests
-from gi.repository import Gtk
+from gi.repository import GLib, Gtk
 
 from reinforcebot.config import API_URL
 
@@ -23,6 +24,9 @@ class AgentListPage:
             .connect("clicked", lambda *_: self.change_page(self.page + 1), None)
         self.builder.get_object('page-end-button') \
             .connect("clicked", lambda *_: self.change_page(self.end_page), None)
+
+        self.builder.get_object('search') \
+            .connect("changed", lambda *_: self.perform_search(), None)
 
         for i in range(1, 6):
             def clicked_callback(idx):
@@ -53,7 +57,7 @@ class AgentListPage:
         query = f'agents/?page={self.page}&page_size={self.page_size}'
         search = re.sub(r'([^\s\w]|_)+', '', self.search)
         if search:
-            query += f'search="{self.search}"'
+            query += f'&search="{self.search}"'
 
         self.results = requests.get(API_URL + query).json()
         self.authors = self.query_pool.map(
@@ -77,6 +81,11 @@ class AgentListPage:
             self.builder.get_object(f'result{idx}').hide()
             self.builder.get_object(f'result{idx}-button').hide()
 
+        if len(self.results['results']) == 0:
+            self.builder.get_object('no-results-found').show()
+        else:
+            self.builder.get_object('no-results-found').hide()
+
         previous_page = '.' if self.results['previous'] is None else str(self.page - 1)
         next_page = '.' if self.results['next'] is None else str(self.page + 1)
         self.builder.get_object('page-left-button').set_label(previous_page)
@@ -89,6 +98,23 @@ class AgentListPage:
         self.page = page
         self.fetch()
         self.render()
+
+    def perform_search(self):
+        self.page = 1
+        search = self.builder.get_object('search').get_text()
+        self.search = search
+
+        def debounce():
+            time.sleep(0.5)
+
+            def update_results():
+                self.fetch()
+                self.render()
+
+            if self.search == search:
+                GLib.idle_add(update_results)
+
+        self.query_pool.submit(debounce)
 
     def on_create_clicked(self):
         print('Create')
