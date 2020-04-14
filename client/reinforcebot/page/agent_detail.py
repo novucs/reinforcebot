@@ -18,7 +18,8 @@ from reinforcebot.page import agent_list
 
 
 class AgentDetailPage:
-    def __init__(self, builder):
+    def __init__(self, router, builder):
+        self.router = router
         self.builder = builder
         self.builder.get_object('back-to-agent-listing-button') \
             .connect("clicked", lambda *_: self.on_agent_list_clicked(), None)
@@ -35,14 +36,16 @@ class AgentDetailPage:
         self.window.set_title("ReinforceBot - Agent Detail")
         self.window.connect("destroy", Gtk.main_quit)
         self.window.set_position(Gtk.WindowPosition.CENTER)
-        self.window.show_all()
 
         self.screen_recorder = screen.Recorder()
         self.agent_profile = AgentProfile()
 
+    def present(self):
+        self.window.present()
+
     def on_agent_list_clicked(self):
         self.window.hide()
-        agent_list.AgentListPage(self.builder)
+        self.router.route('agent_list')
 
     def on_select_window_clicked(self):
         self.window.hide()

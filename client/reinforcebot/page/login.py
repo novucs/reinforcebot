@@ -4,7 +4,8 @@ from reinforcebot.page import agent_list
 
 
 class LoginPage:
-    def __init__(self, builder):
+    def __init__(self, router, builder):
+        self.router = router
         self.builder = builder
         self.builder.get_object('signin-button') \
             .connect("clicked", lambda *_: self.on_signin_clicked(), None)
@@ -15,11 +16,13 @@ class LoginPage:
         self.window.set_title("ReinforceBot - Sign In")
         self.window.connect("destroy", Gtk.main_quit)
         self.window.set_position(Gtk.WindowPosition.CENTER)
-        self.window.show_all()
+
+    def present(self):
+        self.window.present()
 
     def on_signin_clicked(self):
         print('Login')
 
     def on_continue_offline_clicked(self):
         self.window.hide()
-        agent_list.AgentListPage(self.builder)
+        self.router.route('agent_list')
