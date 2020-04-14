@@ -1,4 +1,5 @@
 import json
+import os
 
 from reinforcebot.config import SESSION_FILE
 from reinforcebot.router import PageRouter
@@ -13,6 +14,9 @@ class App:
         self.jwt_refresh = None
 
     def sign_in(self):
+        if not os.path.exists(SESSION_FILE):
+            return False
+
         with open(SESSION_FILE, 'r') as session:
             jwt = json.load(session)
 
