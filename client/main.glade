@@ -1070,7 +1070,7 @@ Read more at the URL below:</property>
               </packing>
             </child>
             <child>
-              <object class="GtkEntry">
+              <object class="GtkEntry" id="username">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="margin_left">10</property>
@@ -1114,13 +1114,15 @@ Read more at the URL below:</property>
               </packing>
             </child>
             <child>
-              <object class="GtkEntry">
+              <object class="GtkEntry" id="password">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="margin_left">10</property>
                 <property name="margin_right">128</property>
                 <property name="margin_top">10</property>
                 <property name="margin_bottom">10</property>
+                <property name="visibility">False</property>
+                <property name="invisible_char">*</property>
                 <property name="input_purpose">password</property>
               </object>
               <packing>

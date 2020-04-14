@@ -7,9 +7,9 @@ def main():
     from gi.repository import Gtk
     builder = Gtk.Builder()
     builder.add_from_file("main.glade")
-    from reinforcebot.router import PageRouter
-    router = PageRouter(builder)
-    router.route('sigin_in')
+    from reinforcebot.app import App
+    app = App(builder)
+    app.start()
     Gtk.main()
 
 

@@ -383,7 +383,7 @@ export default class AgentDetail extends Component {
               />
             }>
             Find your agent parameter files
-            under: <br/><code>/home/&lt;username&gt;/.agents/&lt;name&gt;-&lt;timestamp&gt;.tar.gz</code>
+            under: <br/><code>/home/&lt;username&gt;/ReinforceBot/&lt;name&gt;-&lt;timestamp&gt;.tar.gz</code>
           </Popup>
           <input
             ref={this.fileInputRef}

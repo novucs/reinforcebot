@@ -10,9 +10,9 @@ from reinforcebot.config import API_URL
 
 
 class AgentListPage:
-    def __init__(self, router, builder):
-        self.router = router
-        self.builder = builder
+    def __init__(self, app):
+        self.app = app
+        self.builder = app.builder
         self.builder.get_object('create-button') \
             .connect("clicked", lambda *_: self.on_create_clicked(), None)
 
@@ -117,4 +117,4 @@ class AgentListPage:
 
     def on_agent_detail_clicked(self, idx):
         self.window.hide()
-        self.router.route('agent_detail', agent=self.results['results'][idx - 1])
+        self.app.router.route('agent_detail', agent=self.results['results'][idx - 1])

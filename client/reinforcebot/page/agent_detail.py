@@ -19,9 +19,9 @@ from reinforcebot.messaging import notify
 
 
 class AgentDetailPage:
-    def __init__(self, router, builder):
-        self.router = router
-        self.builder = builder
+    def __init__(self, app):
+        self.app = app
+        self.builder = app.builder
         self.builder.get_object('back-to-agent-listing-button') \
             .connect("clicked", lambda *_: self.on_agent_list_clicked(), None)
         self.builder.get_object('select-area-button') \
@@ -47,7 +47,7 @@ class AgentDetailPage:
 
     def on_agent_list_clicked(self):
         self.window.hide()
-        self.router.route('agent_list')
+        self.app.router.route('agent_list')
 
     def on_select_window_clicked(self):
         self.window.hide()
