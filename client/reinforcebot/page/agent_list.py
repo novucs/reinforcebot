@@ -6,7 +6,9 @@ from concurrent.futures.thread import ThreadPoolExecutor
 import requests
 from gi.repository import GLib, Gtk
 
+from reinforcebot.agent_profile import AgentProfile
 from reinforcebot.config import API_URL
+from reinforcebot.messaging import alert
 
 
 class AgentListPage:
@@ -40,6 +42,12 @@ class AgentListPage:
         self.window.connect("destroy", Gtk.main_quit)
         self.window.set_position(Gtk.WindowPosition.CENTER)
 
+        def pulse_progress_bar(_):
+            self.builder.get_object('agent-list-progress-bar').pulse()
+            return True
+
+        self.timeout_id = GLib.timeout_add(50, pulse_progress_bar, None)
+
         self.page = 1
         self.end_page = 1
         self.page_size = 5
@@ -60,8 +68,8 @@ class AgentListPage:
             query += f'&search="{self.search}"'
 
         self.results = requests.get(API_URL + query).json()
-        self.authors = self.query_pool.map(
-            lambda a: requests.get(API_URL + f'users/{a["author"]}/').json(), self.results['results'])
+        self.authors = list(self.query_pool.map(
+            lambda a: requests.get(API_URL + f'users/{a["author"]}/').json(), self.results['results']))
         self.end_page = math.ceil(self.results['count'] / self.page_size)
 
     def render(self):
@@ -95,19 +103,27 @@ class AgentListPage:
     def change_page(self, page):
         if page < 1 or self.end_page < page or self.page == page:
             return
+        self.show_progress_bar(True)
         self.page = page
-        self.fetch()
-        self.render()
+
+        def change_inner():
+            self.fetch()
+            GLib.idle_add(self.render)
+            self.show_progress_bar(False)
+
+        self.query_pool.submit(change_inner)
 
     def perform_search(self):
         self.page = 1
         search = self.builder.get_object('search').get_text()
         self.search = search
+        self.show_progress_bar(True)
 
         def debounce():
             time.sleep(0.2)
             if self.search == search:
                 self.fetch()
+                self.show_progress_bar(False)
                 GLib.idle_add(self.render)
 
         self.query_pool.submit(debounce)
@@ -116,5 +132,35 @@ class AgentListPage:
         print('Create')
 
     def on_agent_detail_clicked(self, idx):
-        self.window.hide()
-        self.app.router.route('agent_detail', agent=self.results['results'][idx - 1])
+        agent = self.results['results'][idx - 1]
+        self.show_progress_bar(True)
+
+        def download():
+            def finished():
+                self.show_progress_bar(False)
+                self.window.hide()
+                self.app.router.route('agent_detail', agent_profile=agent_profile)
+
+            def failed():
+                self.show_progress_bar(False)
+                alert(self.window, f'Cannot open {agent["name"]}. It may be a corrupt save.')
+
+            try:
+                agent_profile = AgentProfile.download(agent['id'])
+            except Exception as e:
+                print('Failed to download: ', e)
+                GLib.idle_add(failed)
+                return
+            GLib.idle_add(finished)
+
+        self.query_pool.submit(download)
+
+    def show_progress_bar(self, show=True):
+        def perform():
+            progress_bar = self.builder.get_object('agent-list-progress-bar')
+            if show:
+                progress_bar.show()
+            else:
+                progress_bar.hide()
+
+        GLib.idle_add(perform)

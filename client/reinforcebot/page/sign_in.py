@@ -34,7 +34,7 @@ class SignInPage:
             return
 
         with open(SESSION_FILE, 'w') as session:
-            json.dump(jwt, session)
+            json.dump(jwt, session, indent=2)
 
         self.app.sign_in()
         self.app.router.route('agent_list')

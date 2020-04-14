@@ -1,3 +1,6 @@
+import json
+import os
+
 import numpy as np
 
 from reinforcebot.config import SEGMENT_SIZE
@@ -13,6 +16,8 @@ class RewardReplayBuffer:
         self.index = 0
         self.size = 0
         self.max_size = max_size
+        self.observation_space = observation_space
+        self.segment_size = segment_size
 
     def write(self, s1, s2, p):
         o1, a1 = s1
@@ -32,6 +37,38 @@ class RewardReplayBuffer:
             (self.o2[indices], self.a2[indices]),
             self.p[indices],
         )
+
+    def save(self, path):
+        os.makedirs(path, exist_ok=True)
+        with open(os.path.join(path, 'settings.json'), 'w') as settings_file:
+            json.dump({
+                'index': self.index,
+                'size': self.size,
+                'max_size': self.max_size,
+                'observation_space': self.observation_space,
+                'segment_size': self.segment_size,
+            }, settings_file, indent=2)
+
+        np.save(os.path.join(path, 'segment1_observations.npy'), self.o1)
+        np.save(os.path.join(path, 'segment1_actions.npy'), self.a1)
+        np.save(os.path.join(path, 'segment2_observations.npy'), self.o2)
+        np.save(os.path.join(path, 'segment2_actions.npy'), self.a2)
+        np.save(os.path.join(path, 'preferences.npy'), self.p)
+
+    @staticmethod
+    def load(path):
+        with open(os.path.join(path, 'settings.json'), 'r') as settings_file:
+            settings = json.load(settings_file)
+
+        buffer = RewardReplayBuffer(settings['observation_space'], settings['segment_size'], settings['max_size'])
+        buffer.index = settings['index']
+        buffer.size = settings['size']
+        buffer.o1 = np.load(os.path.join(path, 'segment1_observations.npy'))
+        buffer.a1 = np.load(os.path.join(path, 'segment1_actions.npy'))
+        buffer.o2 = np.load(os.path.join(path, 'segment2_observations.npy'))
+        buffer.a2 = np.load(os.path.join(path, 'segment2_actions.npy'))
+        buffer.p = np.load(os.path.join(path, 'preferences.npy'))
+        return buffer
 
 
 class ExperienceReplayBuffer:
@@ -65,6 +102,33 @@ class ExperienceReplayBuffer:
         o = self.o[start:stop]
         a = self.a[start:stop]
         return o, a
+
+    def save(self, path):
+        os.makedirs(path, exist_ok=True)
+        with open(os.path.join(path, 'settings.json'), 'w') as settings_file:
+            json.dump({
+                'index': self.index,
+                'size': self.size,
+                'max_size': self.max_size,
+                'observation_space': self.observation_space,
+            }, settings_file, indent=2)
+
+        np.save(os.path.join(path, 'observations.npy'), self.o)
+        np.save(os.path.join(path, 'actions.npy'), self.a)
+        np.save(os.path.join(path, 'next_observations.npy'), self.n)
+
+    @staticmethod
+    def load(path):
+        with open(os.path.join(path, 'settings.json'), 'r') as settings_file:
+            settings = json.load(settings_file)
+
+        buffer = ExperienceReplayBuffer(settings['observation_space'], settings['max_size'])
+        buffer.index = settings['index']
+        buffer.size = settings['size']
+        buffer.o = np.load(os.path.join(path, 'observations.npy'))
+        buffer.a = np.load(os.path.join(path, 'actions.npy'))
+        buffer.n = np.load(os.path.join(path, 'next_observations.npy'))
+        return buffer
 
 
 class DynamicExperienceReplayBuffer(ExperienceReplayBuffer):

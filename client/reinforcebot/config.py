@@ -11,5 +11,10 @@ UPDATE_TARGET_PARAMETERS_STEPS = 32
 BASE_URL = 'https://reinforcebot.novucs.net/'
 API_URL = BASE_URL + 'api/'
 BASE_PATH = os.path.join(str(Path.home()), 'ReinforceBot')
-os.makedirs(BASE_PATH, exist_ok=True)
 SESSION_FILE = os.path.join(BASE_PATH, 'session.json')
+AGENTS_PATH = os.path.join(BASE_PATH, 'agents')
+CACHE_PATH = os.path.join(BASE_PATH, 'cache')
+
+os.makedirs(BASE_PATH, exist_ok=True)
+os.makedirs(AGENTS_PATH, exist_ok=True)
+os.makedirs(CACHE_PATH, exist_ok=True)

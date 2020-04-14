@@ -1,3 +1,4 @@
+import json
 from threading import Lock, Thread
 
 import cairo
@@ -39,10 +40,12 @@ class AgentDetailPage:
         self.window.set_position(Gtk.WindowPosition.CENTER)
 
         self.screen_recorder = screen.Recorder()
-        self.agent_profile = AgentProfile()
+        self.agent_profile = None
 
-    def present(self, agent):
-        print('Displaying agent detail: ', agent)
+    def present(self, agent_profile):
+        # print('Displaying agent detail:\n', json.dumps({'agent': agent, 'author': author}, indent=2))
+        # self.agent_profile = AgentProfile.load(agent['name'], author)
+        self.agent_profile = agent_profile
         self.window.present()
 
     def on_agent_list_clicked(self):
@@ -84,6 +87,7 @@ class AgentDetailPage:
             else:
                 record_user_experience(self.screen_recorder, self.agent_profile)
                 notify('Successfully saved user experience')
+            self.agent_profile.save()
 
         thread = Thread(target=record)
         thread.start()
@@ -103,6 +107,7 @@ class AgentDetailPage:
             self.agent_profile.loading_lock.release()
             handover_control(self.screen_recorder, self.agent_profile, self.open_preference_chooser)
             notify('Agent control has been lifted')
+            self.agent_profile.save()
 
         thread = Thread(target=control)
         thread.start()
