@@ -41,7 +41,8 @@ class AgentDetailPage:
         self.screen_recorder = screen.Recorder()
         self.agent_profile = AgentProfile()
 
-    def present(self):
+    def present(self, agent):
+        print('Displaying agent detail: ', agent)
         self.window.present()
 
     def on_agent_list_clicked(self):

@@ -15,4 +15,4 @@ class PageRouter:
 
     def route(self, page_name, **kwargs):
         self.current_page = self.pages[page_name]
-        self.current_page.window.present(**kwargs)
+        self.current_page.present(**kwargs)

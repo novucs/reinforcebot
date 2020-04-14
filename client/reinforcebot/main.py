@@ -9,7 +9,7 @@ def main():
     builder.add_from_file("main.glade")
     from reinforcebot.router import PageRouter
     router = PageRouter(builder)
-    router.route('login')
+    router.route('agent_list')
     Gtk.main()
 
 
