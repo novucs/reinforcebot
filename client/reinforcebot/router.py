@@ -1,5 +1,6 @@
 from reinforcebot.page.agent_detail import AgentDetailPage
 from reinforcebot.page.agent_list import AgentListPage
+from reinforcebot.page.create_agent import CreateAgentPage
 from reinforcebot.page.sign_in import SignInPage
 
 
@@ -13,7 +14,8 @@ class PageRouter:
         self.pages = {
             'agent_detail': AgentDetailPage(self.app),
             'agent_list': AgentListPage(self.app),
-            'sigin_in': SignInPage(self.app),
+            'sign_in': SignInPage(self.app),
+            'create_agent': CreateAgentPage(self.app),
         }
 
     def route(self, page_name, **kwargs):

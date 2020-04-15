@@ -67,12 +67,23 @@ class AgentListPage:
         if search:
             query += f'&search="{self.search}"'
 
-        self.results = requests.get(API_URL + query).json()
+        results = self.app.authorised_fetch(lambda h: requests.get(API_URL + query, headers=h))
+        if results is None:
+            def sign_out():
+                self.window.hide()
+                self.app.router.route('sign_in')
+            GLib.idle_add(sign_out)
+            return
+
+        self.results = results.json()
         self.authors = list(self.query_pool.map(
             lambda a: requests.get(API_URL + f'users/{a["author"]}/').json(), self.results['results']))
         self.end_page = math.ceil(self.results['count'] / self.page_size)
 
     def render(self):
+        if self.results is None:
+            return
+
         for idx, (agent, author) in enumerate(zip(self.results['results'], self.authors)):
             idx += 1
             name = f'{author["username"]}/{agent["name"]}'
@@ -129,7 +140,8 @@ class AgentListPage:
         self.query_pool.submit(debounce)
 
     def on_create_clicked(self):
-        print('Create')
+        self.window.hide()
+        self.app.router.route('create_agent')
 
     def on_agent_detail_clicked(self, idx):
         agent = self.results['results'][idx - 1]
@@ -146,7 +158,7 @@ class AgentListPage:
                 alert(self.window, f'Cannot open {agent["name"]}. It may be a corrupt save.')
 
             try:
-                agent_profile = AgentProfile.download(agent['id'])
+                agent_profile = AgentProfile.download(self.app, agent['id'])
             except Exception as e:
                 print('Failed to download: ', e)
                 GLib.idle_add(failed)

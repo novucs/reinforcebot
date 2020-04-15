@@ -1,7 +1,9 @@
 import json
 import os
 
-from reinforcebot.config import SESSION_FILE
+import requests
+
+from reinforcebot.config import SESSION_FILE, API_URL
 from reinforcebot.router import PageRouter
 
 
@@ -9,9 +11,24 @@ class App:
     def __init__(self, builder):
         self.builder = builder
         self.router = PageRouter(self)
+        self.user = None
         self.signed_in = False
         self.jwt_access = None
         self.jwt_refresh = None
+
+    def authorised_fetch(self, callback):
+        if not self.signed_in:
+            return callback({})
+
+        response = callback({'Authorization': f'JWT {self.jwt_access}'})
+
+        if response.status_code != 200:
+            response = requests.post(API_URL + 'auth/jwt/refresh/', json={'refresh': self.jwt_refresh})
+            if response.status_code != 200:
+                return None
+            self.jwt_access = response.json()['access']
+            response = callback({'Authorization': f'JWT {self.jwt_access}'})
+        return response
 
     def sign_in(self):
         if not os.path.exists(SESSION_FILE):
@@ -23,6 +40,12 @@ class App:
         if 'refresh' not in jwt:
             return False
 
+        response = self.authorised_fetch(lambda h: requests.get(API_URL + 'auth/users/me/', headers=h))
+
+        if response is None:
+            return False
+
+        self.user = response.json()
         self.signed_in = True
         self.jwt_access = jwt['access']
         self.jwt_refresh = jwt['refresh']

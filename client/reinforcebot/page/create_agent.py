@@ -3,6 +3,7 @@ import json
 import requests
 from gi.repository import Gtk
 
+from reinforcebot.agent_profile import AgentProfile
 from reinforcebot.config import SESSION_FILE
 from reinforcebot.messaging import notify
 
@@ -27,6 +28,7 @@ class CreateAgentPage:
     def on_create_agent_clicked(self):
         name = self.builder.get_object('agent-name-entry').get_text()
         description = self.builder.get_object('agent-description-entry').get_text()
+        agent_profile = AgentProfile()
         response = requests.post(
             'https://reinforcebot.novucs.net/api/agents/',
             files={

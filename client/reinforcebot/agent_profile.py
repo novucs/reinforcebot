@@ -111,8 +111,12 @@ class AgentProfile:
         return profile
 
     @staticmethod
-    def download(agent_id):
-        agent = requests.get(API_URL + f'agents/{agent_id}/').json()
+    def download(app, agent_id):
+        agent = app.authorised_fetch(lambda h: requests.get(API_URL + f'agents/{agent_id}/', headers=h))
+        if agent is None:
+            return None
+
+        agent = agent.json()
         author = requests.get(API_URL + f'users/{agent["author"]}/').json()
 
         author_path = os.path.join(AGENTS_PATH, author['username'])
