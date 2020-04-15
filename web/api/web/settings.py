@@ -119,3 +119,9 @@ SWAGGER_SETTINGS = {
 
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
+
+CLOUD_COMPUTE_RUNNER_NODES = {
+    node.split(',')[0]: node.split(',')[1]
+    for node in os.environ.get('CLOUD_COMPUTE_RUNNER_NODES').split(' ')
+    if ',' in node
+}

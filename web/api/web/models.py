@@ -1,6 +1,8 @@
-from django.db import models
 from django.contrib.auth import get_user_model
+from django.db import models
 from simple_history.models import HistoricalRecords
+
+from web.settings import CLOUD_COMPUTE_RUNNER_NODES
 
 
 class Agent(models.Model):
@@ -54,3 +56,19 @@ class Payment(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, related_name='profile')
     compute_credits = models.IntegerField(default=0)
+
+
+class ComputeSession(models.Model):
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
+    runner_id = models.TextField()
+    session_id = models.TextField()
+    token = models.TextField()
+
+    @property
+    def runner_url(self):
+        return CLOUD_COMPUTE_RUNNER_NODES[self.runner_id]
+
+    @property
+    def url(self):
+        return self.runner_url + f'session/{self.session_id}/'

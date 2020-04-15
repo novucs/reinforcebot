@@ -1,19 +1,21 @@
+import requests
 import stripe
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.search import TrigramDistance
 from django.core.exceptions import SuspiciousOperation
 from django.db import IntegrityError
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
+from django.utils.crypto import get_random_string
 from rest_framework import mixins, status, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.response import Response
 
-from web.models import Agent, AgentLike, Contributor, Payment, PaymentIntent, UserProfile
+from web.models import Agent, AgentLike, ComputeSession, Contributor, Payment, PaymentIntent, UserProfile
 from web.serializers import AgentLikeSerializer, AgentRetrieveSerializer, AgentSerializer, ContributorSerializer, \
     PaymentIntentSerializer, PaymentSerializer, UserProfileSerializer, UserRetrieveSerializer
-from web.settings import STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET
+from web.settings import CLOUD_COMPUTE_RUNNER_NODES, STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET
 
 stripe.api_key = STRIPE_API_KEY
 
@@ -248,10 +250,77 @@ class ProfileViewSet(mixins.RetrieveModelMixin,
         return Response(serializer.data)
 
 
-# start (agent id) -> runner instance id
-# experience (runner instance id) -> ok
-# save (runner instance id) -> ok (client can download after this call)
-# stop (runner instance id) -> ok
+class RunnerViewSet(viewsets.ViewSet):
+    queryset = ComputeSession.objects.all()
 
-class ComputeStartViewSet:
-    pass
+    def create(self, request):
+        if self.request.user is None:
+            return Response({'detail': 'Only authenticated users can use the compute service'}, status=401)
+
+        profile = ComputeSession.objects.all().filter(user=self.request.user).first()
+        if profile.compute_credits <= 0:
+            return Response({'detail': 'You have no remaining cloud compute credits'}, status=400)
+
+        if 'agent_id' not in self.request.data:
+            return Response({'detail': 'agent_id was not specified'}, status=400)
+
+        agent = Agent.objects.all().filter(id=self.request.data['agent_id']).first()
+        if agent is None:
+            return Response({'detail': 'No agent by the given id found'}, status=404)
+
+        if agent.author != self.request.user or self.request.user not in agent.contributors:
+            return Response({'detail': 'You do not have write privileges for this agent'}, status=400)
+
+        token = get_random_string(length=32)
+        for runner_id, url in CLOUD_COMPUTE_RUNNER_NODES.items():
+            response = requests.post(url + 'session', json={'token': token})
+            if response == 200:
+                break
+        else:
+            return Response({'detail': 'No available compute runners'}, status=429)
+
+        session_id = response.json()['session_id']
+        session = ComputeSession(
+            user=self.request.user,
+            agent=agent,
+            runner_id=runner_id,
+            session_id=session_id,
+            token=token,
+        )
+        session.save()
+
+        return Response({'token': token})
+
+    def retrieve(self, request):
+        session = self.get_session_or_404()
+        response = requests.get(session.url)
+        if response.status_code == 404:
+            session.delete()
+            return Response(status=404)
+        return Response(response.json())
+
+    def destroy(self, request):
+        session = self.get_session_or_404()
+        response = requests.delete(session.url)
+        session.delete()
+        if response.status_code == 404:
+            return Response(status=404)
+        return Response(response.json())
+
+    def get_session_or_404(self):
+        token = self.kwargs['pk']
+        session = ComputeSession.objects.all().filter(user=self.request.user, token=token).first()
+        if session is None:
+            raise Http404
+        return session
+
+
+class RunnerExperienceViewSet(viewsets.ViewSet):
+    queryset = ComputeSession.objects.all()
+
+    def create(self, request, runner_pk=None):
+        session = ComputeSession.objects.all().filter(user=self.request.user, token=runner_pk).first()
+        if session is None:
+            raise Http404
+        response = requests.post(session.url + '/experience/', json=request.data)
+        return Response(response.json())

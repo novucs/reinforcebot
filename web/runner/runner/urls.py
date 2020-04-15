@@ -1,11 +1,10 @@
-from django.conf.urls import url
-from django.urls import include
-from rest_framework import routers
+from django.urls import path
+
+from runner import views
 from runner.settings import BASE_PATH
 
-router = routers.DefaultRouter()
-router.register(r'create', )
-
 urlpatterns = [
-    url(rf'^{BASE_PATH}/', include(router.urls)),
+    path(f'{BASE_PATH}/session/', views.handle_sessions),
+    path(f'{BASE_PATH}/session/<int:session_id>/', views.handle_session),
+    path(f'{BASE_PATH}/session/<int:session_id>/experience/', views.handle_session_experience),
 ]

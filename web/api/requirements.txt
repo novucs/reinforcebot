@@ -10,3 +10,4 @@ django-simple-history==2.8.0
 django-cors-headers==3.2.1
 drf-yasg==1.17.1
 stripe==2.43.0
+drf-nested-routers==0.91
