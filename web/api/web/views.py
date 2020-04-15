@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from web.models import Agent, AgentLike, ComputeSession, Contributor, Payment, PaymentIntent, UserProfile
 from web.serializers import AgentLikeSerializer, AgentRetrieveSerializer, AgentSerializer, ContributorSerializer, \
     PaymentIntentSerializer, PaymentSerializer, UserProfileSerializer, UserRetrieveSerializer
-from web.settings import CLOUD_COMPUTE_RUNNER_NODES, STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET
+from web.settings import CLOUD_COMPUTE_RUNNER_NODES, RUNNER_KEY, STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET
 
 stripe.api_key = STRIPE_API_KEY
 
@@ -297,6 +297,9 @@ class RunnerViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, pk):
         session = self.get_session_or_404(pk)
+        if session.cancelled:
+            session.delete()
+            return Response({'detail': 'Runner was cancelled due to lack of credits'}, status=429)
         response = requests.get(session.url)
         if response.status_code == 404:
             session.delete()
@@ -305,6 +308,9 @@ class RunnerViewSet(viewsets.ViewSet):
 
     def destroy(self, request, pk):
         session = self.get_session_or_404(pk)
+        if session.cancelled:
+            session.delete()
+            return Response({'detail': 'Runner was cancelled due to lack of credits'}, status=429)
         response = requests.delete(session.url)
         session.delete()
         if response.status_code == 404:
@@ -326,5 +332,34 @@ class RunnerExperienceViewSet(viewsets.ViewSet):
         session = ComputeSession.objects.all().filter(user=self.request.user, token=runner_pk).first()
         if session is None:
             raise Http404
+        if session.cancelled:
+            session.delete()
+            return Response({'detail': 'Runner was cancelled due to lack of credits'}, status=429)
         response = requests.post(session.url + '/experience/', json=request.data)
         return Response(response.json())
+
+
+class CreditsViewSet(viewsets.ViewSet):
+    queryset = UserProfile.objects.all()
+
+    def update(self, request, pk):
+        if 'runner_key' not in request.data or request.data['runner_key'] != RUNNER_KEY:
+            return Response(status=401)
+
+        token = pk
+        session = ComputeSession.objects.all().filter(token=token).first()
+        if session is None:
+            return Response({'detail': 'No session found'}, status=404)
+
+        profile = UserProfile.objects.all().filter(user=session.user).first()
+        if session is None:
+            return Response({'detail': 'No user profile found'}, status=404)
+
+        profile.compute_credits = max(0, profile.compute_credits - request.data['used'])
+        profile.save()
+
+        if profile.compute_credits <= 0:
+            session.cancelled = True
+            session.save()
+
+        return Response({'cancel': session.cancelled})

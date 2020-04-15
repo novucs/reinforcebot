@@ -55,7 +55,7 @@ class Payment(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, related_name='profile')
-    compute_credits = models.IntegerField(default=0)
+    compute_credits = models.FloatField(default=0)
 
 
 class ComputeSession(models.Model):
@@ -63,7 +63,8 @@ class ComputeSession(models.Model):
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
     runner_id = models.TextField()
     session_id = models.TextField()
-    token = models.TextField()
+    token = models.TextField(unique=True)
+    cancelled = models.BooleanField(default=False)
 
     @property
     def runner_url(self):

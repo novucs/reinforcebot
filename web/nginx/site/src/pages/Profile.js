@@ -79,7 +79,7 @@ class CheckoutForm extends React.Component {
       <div>
         <Segment>
           <h4>Buy Compute Credits</h4>
-          <p>You currently own <strong>{this.props.profile.compute_credits}</strong> compute credits.</p>
+          <p>You currently own <strong>{parseFloat(this.props.profile.compute_credits).toFixed(3)}</strong> compute credits.</p>
           <p>1 compute credit = 1 hour of GPU compute</p>
           <p style={{marginBottom: '24px'}}>Purchase 10 compute credits here for only £0.30</p>
           <form onSubmit={this.handleSubmit}>

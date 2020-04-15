@@ -3,9 +3,10 @@ import time
 from threading import Thread
 
 import numpy as np
+import requests
 from django.http import HttpResponse, JsonResponse
 
-from runner.settings import SESSION_LIMIT
+from runner.settings import SESSION_LIMIT, API_URL, RUNNER_KEY
 
 
 class Session:
@@ -19,7 +20,17 @@ class Session:
 
     def run(self):
         while self.running:
+            start = time.time()
             time.sleep(1)
+            time_elapsed = time.time() - start
+            response = requests.put(API_URL + f'credits/{self.token}/', json={
+                'runner_key': RUNNER_KEY,
+                'used': (time_elapsed / 60) / 60,
+            })
+
+            if response.json()['cancel']:
+                self.running = False
+
         self.runner.session_ended(self.session_id)
 
     def load_experience(self, experience):

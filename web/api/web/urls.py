@@ -27,6 +27,7 @@ router.register(r'payment-intents', views.PaymentIntentViewSet)
 router.register(r'payments', views.PaymentViewSet)
 router.register(r'profiles', views.ProfileViewSet)
 router.register(r'runners', views.RunnerViewSet)
+router.register(r'credits', views.CreditsViewSet)
 
 runners_router = routers.NestedDefaultRouter(router, r'runners', lookup='runner')
 runners_router.register(r'experience', views.RunnerExperienceViewSet)

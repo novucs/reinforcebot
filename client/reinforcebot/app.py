@@ -58,30 +58,32 @@ class App:
         self.router.route('agent_list' if self.sign_in() else 'sign_in')
 
     def start_runner(self, agent_id):
-        response = self.authorised_fetch(lambda: requests.post(API_URL + 'runners/', json={'agent_id': agent_id}))
+        response = self.authorised_fetch(
+            lambda headers: requests.post(API_URL + 'runners/', json={'agent_id': agent_id}, headers=headers))
         if response.status_code != 200:
             notify(response.json()['detail'])
             return None
-        return response['token']
+        return response.json()['token']
 
     def fetch_runner_parameters(self, token):
-        response = self.authorised_fetch(lambda: requests.get(API_URL + f'runners/{token}/'))
+        response = self.authorised_fetch(lambda headers: requests.get(API_URL + f'runners/{token}/', headers=headers))
         if response.status_code != 200:
             notify(response.json()['detail'])
             return None
-        return response['parameters']
+        return response.json()['parameters']
 
     def add_runner_experience(self, token, experience):
         response = self.authorised_fetch(
-            lambda: requests.post(API_URL + f'runners/{token}/experience/', json=experience))
+            lambda headers: requests.post(API_URL + f'runners/{token}/experience/', json=experience, headers=headers))
         if response.status_code != 200:
             notify(response.json()['detail'])
             return None
-        return response['parameters']
+        return response.json()['parameters']
 
     def stop_runner(self, token):
-        response = self.authorised_fetch(lambda: requests.delete(API_URL + f'runners/{token}/'))
+        response = self.authorised_fetch(
+            lambda headers: requests.delete(API_URL + f'runners/{token}/', headers=headers))
         if response.status_code != 200:
             notify(response.json()['detail'])
             return None
-        return response['parameters']
+        return response.json()['parameters']

@@ -77,3 +77,5 @@ USE_TZ = True
 STATIC_URL = f'/{BASE_PATH}/static/'
 
 SESSION_LIMIT = int(os.environ.get('SESSION_LIMIT', default=5))
+RUNNER_KEY = os.environ.get('RUNNER_KEY')
+API_URL = os.environ.get('API_URL')

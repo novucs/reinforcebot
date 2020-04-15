@@ -125,3 +125,4 @@ CLOUD_COMPUTE_RUNNER_NODES = {
     for node in os.environ.get('CLOUD_COMPUTE_RUNNER_NODES').split(' ')
     if ',' in node
 }
+RUNNER_KEY = os.environ.get('RUNNER_KEY')
