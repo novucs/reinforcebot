@@ -22,7 +22,7 @@ class App:
 
         response = callback({'Authorization': f'JWT {self.jwt_access}'})
 
-        if response.status_code != 200:
+        if response.status_code == 401:
             response = requests.post(API_URL + 'auth/jwt/refresh/', json={'refresh': self.jwt_refresh})
             if response.status_code != 200:
                 return None
@@ -40,15 +40,16 @@ class App:
         if 'refresh' not in jwt:
             return False
 
-        response = self.authorised_fetch(lambda h: requests.get(API_URL + 'auth/users/me/', headers=h))
-
-        if response is None:
-            return False
-
-        self.user = response.json()
         self.signed_in = True
         self.jwt_access = jwt['access']
         self.jwt_refresh = jwt['refresh']
+        response = self.authorised_fetch(lambda h: requests.get(API_URL + 'auth/users/me/', headers=h))
+
+        if response is None:
+            self.signed_in = False
+            return False
+
+        self.user = response.json()
         return True
 
     def start(self):

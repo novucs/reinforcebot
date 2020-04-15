@@ -8,7 +8,7 @@ import requests
 
 from reinforcebot import reward
 from reinforcebot.agent import Agent
-from reinforcebot.config import AGENTS_PATH, ENSEMBLE_SIZE, OBSERVATION_SPACE, API_URL, CACHE_PATH
+from reinforcebot.config import AGENTS_PATH, API_URL, CACHE_PATH, ENSEMBLE_SIZE, OBSERVATION_SPACE
 from reinforcebot.replay_buffer import ExperienceReplayBuffer, RewardReplayBuffer
 
 
@@ -46,10 +46,11 @@ class AgentProfile:
         self.agent = Agent(OBSERVATION_SPACE, len(action_mapping))
         self.loading_lock.release()
 
-    def agent_path(self):
+    def agent_path(self, create=True):
         author_path = os.path.join(AGENTS_PATH, '_' if self.author is None else self.author['username'])
         path = os.path.join(author_path, self.name)
-        os.makedirs(path, exist_ok=True)
+        if create:
+            os.makedirs(path, exist_ok=True)
         return path
 
     def save(self, buffers=False):
@@ -62,7 +63,7 @@ class AgentProfile:
         with open(os.path.join(path, 'settings.json'), 'w') as settings_file:
             json.dump({
                 'initialised': self.initialised,
-                'action_mapping': {k: list(v) for k, v in self.action_mapping.items()},
+                'action_mapping': {k: list(v) for k, v in self.action_mapping.items()} if self.action_mapping else None,
                 'author': self.author,
                 'agent_id': self.agent_id,
                 'name': self.name,
@@ -80,8 +81,14 @@ class AgentProfile:
 
     def backup(self):
         self.save(buffers=False)
-        path = os.path.join(self.agent_path(), 'backups', f'{self.name}-{datetime.now().isoformat()}.tar.gz')
-        subprocess.run(['tar', '-czf', str(path), 'parameters', 'settings.json'])
+        backups_path = os.path.join(self.agent_path(), 'backups')
+        os.makedirs(backups_path, exist_ok=True)
+        path = os.path.join(backups_path, f'{self.name}-{datetime.now().isoformat()}.tar.gz')
+        tar_cmd = ['tar', '-czf', str(path), 'settings.json']
+        if os.path.exists(os.path.join(self.agent_path(), 'parameters')):
+            tar_cmd.append('parameters')
+        subprocess.run(tar_cmd, cwd=self.agent_path())
+        return path
 
     @staticmethod
     def load(name, author=None):

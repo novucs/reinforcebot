@@ -1,11 +1,10 @@
-import json
+import os
 
 import requests
 from gi.repository import Gtk
 
 from reinforcebot.agent_profile import AgentProfile
-from reinforcebot.config import SESSION_FILE
-from reinforcebot.messaging import notify
+from reinforcebot.messaging import alert, ask
 
 
 class CreateAgentPage:
@@ -15,7 +14,7 @@ class CreateAgentPage:
         self.builder.get_object('create-agent-button') \
             .connect("clicked", lambda *_: self.on_create_agent_clicked(), None)
         self.builder.get_object('cancel-create-agent-button') \
-            .connect("clicked", lambda *_: self.on_cancel_clicked(), None)
+            .connect("clicked", lambda *_: self.cancel(), None)
 
         self.window = self.builder.get_object("create-agent")
         self.window.set_title("ReinforceBot - Create Agent")
@@ -28,19 +27,37 @@ class CreateAgentPage:
     def on_create_agent_clicked(self):
         name = self.builder.get_object('agent-name-entry').get_text()
         description = self.builder.get_object('agent-description-entry').get_text()
-        agent_profile = AgentProfile()
-        response = requests.post(
-            'https://reinforcebot.novucs.net/api/agents/',
-            files={
-                'parameters': (
-                    'parameters.xls',
-                    open('report.xls', 'rb'),
-                    'application/vnd.ms-excel',
-                    {'Expires': '0'},
-                )
-            }
-        )
+        if name.strip() == "" or description.strip() == "":
+            alert(self.window, 'Agents must have a name and a description')
+            return
 
-    def on_cancel_clicked(self):
+        agent_profile = AgentProfile()
+        agent_profile.name = name
+        agent_profile.description = description
+        agent_profile.author = self.app.user
+
+        if os.path.exists(agent_profile.agent_path(create=False)) and \
+                not ask(self.window, 'This will overwrite an existing agent, are you sure?'):
+            self.cancel()
+            return
+
+        backup_path = agent_profile.backup()
+
+        response = self.app.authorised_fetch(lambda headers: requests.post(
+            'https://reinforcebot.novucs.net/api/agents/',
+            files={'parameters': (os.path.basename(backup_path), open(backup_path, 'rb'))},
+            data={'name': name, 'description': description, 'changeReason': 'Initial creation'},
+            headers=headers,
+        ))
+
+        if response.status_code == 400:
+            alert(self.window, 'Your account already has an agent by that name')
+            return
+
+        agent_profile.agent_id = response.json()['id']
+        self.window.hide()
+        self.app.router.route('agent_detail', agent_profile=agent_profile)
+
+    def cancel(self):
         self.window.hide()
         self.app.router.route('agent_list')
