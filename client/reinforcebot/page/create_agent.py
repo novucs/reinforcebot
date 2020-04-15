@@ -43,18 +43,20 @@ class CreateAgentPage:
 
         backup_path = agent_profile.backup()
 
-        response = self.app.authorised_fetch(lambda headers: requests.post(
-            'https://reinforcebot.novucs.net/api/agents/',
-            files={'parameters': (os.path.basename(backup_path), open(backup_path, 'rb'))},
-            data={'name': name, 'description': description, 'changeReason': 'Initial creation'},
-            headers=headers,
-        ))
+        if self.app.signed_in:
+            response = self.app.authorised_fetch(lambda headers: requests.post(
+                'https://reinforcebot.novucs.net/api/agents/',
+                files={'parameters': (os.path.basename(backup_path), open(backup_path, 'rb'))},
+                data={'name': name, 'description': description, 'changeReason': 'Initial creation'},
+                headers=headers,
+            ))
 
-        if response.status_code == 400:
-            alert(self.window, 'Your account already has an agent by that name')
-            return
+            if response.status_code == 400:
+                alert(self.window, 'Your account already has an agent by that name')
+                return
 
-        agent_profile.agent_id = response.json()['id']
+            agent_profile.agent_id = response.json()['id']
+
         self.window.hide()
         self.app.router.route('agent_detail', agent_profile=agent_profile)
 
