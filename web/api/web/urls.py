@@ -27,6 +27,7 @@ router.register(r'agent-likes', AgentLikesViewSet)
 router.register(r'payment-intents', PaymentIntentViewSet)
 router.register(r'payments', PaymentViewSet)
 router.register(r'profiles', ProfileViewSet)
+router.register(r'compute/start', ComputeStartViewSet)
 
 urlpatterns = [
     url(r'^api/', include(router.urls)),

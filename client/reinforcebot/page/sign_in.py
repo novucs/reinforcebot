@@ -4,7 +4,7 @@ import requests
 from gi.repository import Gtk
 
 from reinforcebot.config import SESSION_FILE
-from reinforcebot.messaging import notify
+from reinforcebot.messaging import alert
 
 
 class SignInPage:
@@ -30,7 +30,7 @@ class SignInPage:
         jwt = requests.post('https://reinforcebot.novucs.net/api/auth/jwt/create/',
                             json={'username': username, 'password': password}).json()
         if 'access' not in jwt or 'refresh' not in jwt:
-            notify('No active account found with the given credentials')
+            alert(self.window, 'No active account found with the given credentials')
             return
 
         with open(SESSION_FILE, 'w') as session:

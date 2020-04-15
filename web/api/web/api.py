@@ -246,3 +246,12 @@ class ProfileViewSet(mixins.RetrieveModelMixin,
             instance.save()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+
+# start (agent id) -> runner instance id
+# experience (runner instance id) -> ok
+# save (runner instance id) -> ok (client can download after this call)
+# stop (runner instance id) -> ok
+
+class ComputeStartViewSet:
+    pass
