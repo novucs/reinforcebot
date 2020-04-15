@@ -4,6 +4,7 @@ import requests
 from gi.repository import Gtk
 
 from reinforcebot.agent_profile import AgentProfile
+from reinforcebot.config import API_URL
 from reinforcebot.messaging import alert, ask
 
 
@@ -45,7 +46,7 @@ class CreateAgentPage:
 
         if self.app.signed_in:
             response = self.app.authorised_fetch(lambda headers: requests.post(
-                'https://reinforcebot.novucs.net/api/agents/',
+                API_URL + 'agents/',
                 files={'parameters': (os.path.basename(backup_path), open(backup_path, 'rb'))},
                 data={'name': name, 'description': description, 'changeReason': 'Initial creation'},
                 headers=headers,
