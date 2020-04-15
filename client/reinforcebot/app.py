@@ -4,6 +4,7 @@ import os
 import requests
 
 from reinforcebot.config import SESSION_FILE, API_URL
+from reinforcebot.messaging import notify
 from reinforcebot.router import PageRouter
 
 
@@ -55,3 +56,32 @@ class App:
     def start(self):
         self.router.setup()
         self.router.route('agent_list' if self.sign_in() else 'sign_in')
+
+    def start_runner(self, agent_id):
+        response = self.authorised_fetch(lambda: requests.post(API_URL + 'runners/', json={'agent_id': agent_id}))
+        if response.status_code != 200:
+            notify(response.json()['detail'])
+            return None
+        return response['token']
+
+    def fetch_runner_parameters(self, token):
+        response = self.authorised_fetch(lambda: requests.get(API_URL + f'runners/{token}/'))
+        if response.status_code != 200:
+            notify(response.json()['detail'])
+            return None
+        return response['parameters']
+
+    def add_runner_experience(self, token, experience):
+        response = self.authorised_fetch(
+            lambda: requests.post(API_URL + f'runners/{token}/experience/', json=experience))
+        if response.status_code != 200:
+            notify(response.json()['detail'])
+            return None
+        return response['parameters']
+
+    def stop_runner(self, token):
+        response = self.authorised_fetch(lambda: requests.delete(API_URL + f'runners/{token}/'))
+        if response.status_code != 200:
+            notify(response.json()['detail'])
+            return None
+        return response['parameters']

@@ -10,6 +10,7 @@ from django.utils.crypto import get_random_string
 from rest_framework import mixins, status, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import JSONParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from web.models import Agent, AgentLike, ComputeSession, Contributor, Payment, PaymentIntent, UserProfile
@@ -252,29 +253,32 @@ class ProfileViewSet(mixins.RetrieveModelMixin,
 
 class RunnerViewSet(viewsets.ViewSet):
     queryset = ComputeSession.objects.all()
+    permission_classes = (IsAuthenticated,)
 
     def create(self, request):
         if self.request.user is None:
             return Response({'detail': 'Only authenticated users can use the compute service'}, status=401)
 
-        profile = ComputeSession.objects.all().filter(user=self.request.user).first()
+        profile = UserProfile.objects.all().filter(user=self.request.user).first()
+        if not profile:
+            profile = UserProfile(user=self.request.user)
+            profile.save()
+
         if profile.compute_credits <= 0:
             return Response({'detail': 'You have no remaining cloud compute credits'}, status=400)
 
         if 'agent_id' not in self.request.data:
             return Response({'detail': 'agent_id was not specified'}, status=400)
 
-        agent = Agent.objects.all().filter(id=self.request.data['agent_id']).first()
+        qs = Q(author=self.request.user) | Q(contributors__user=self.request.user)
+        agent = Agent.objects.all().filter(id=self.request.data['agent_id']).filter(qs).first()
         if agent is None:
             return Response({'detail': 'No agent by the given id found'}, status=404)
 
-        if agent.author != self.request.user or self.request.user not in agent.contributors:
-            return Response({'detail': 'You do not have write privileges for this agent'}, status=400)
-
         token = get_random_string(length=32)
         for runner_id, url in CLOUD_COMPUTE_RUNNER_NODES.items():
-            response = requests.post(url + 'session', json={'token': token})
-            if response == 200:
+            response = requests.post(url + 'session/', json={'token': token})
+            if response.status_code == 200:
                 break
         else:
             return Response({'detail': 'No available compute runners'}, status=429)
@@ -291,24 +295,23 @@ class RunnerViewSet(viewsets.ViewSet):
 
         return Response({'token': token})
 
-    def retrieve(self, request):
-        session = self.get_session_or_404()
+    def retrieve(self, request, pk):
+        session = self.get_session_or_404(pk)
         response = requests.get(session.url)
         if response.status_code == 404:
             session.delete()
             return Response(status=404)
         return Response(response.json())
 
-    def destroy(self, request):
-        session = self.get_session_or_404()
+    def destroy(self, request, pk):
+        session = self.get_session_or_404(pk)
         response = requests.delete(session.url)
         session.delete()
         if response.status_code == 404:
             return Response(status=404)
         return Response(response.json())
 
-    def get_session_or_404(self):
-        token = self.kwargs['pk']
+    def get_session_or_404(self, token):
         session = ComputeSession.objects.all().filter(user=self.request.user, token=token).first()
         if session is None:
             raise Http404
@@ -317,6 +320,7 @@ class RunnerViewSet(viewsets.ViewSet):
 
 class RunnerExperienceViewSet(viewsets.ViewSet):
     queryset = ComputeSession.objects.all()
+    permission_classes = (IsAuthenticated,)
 
     def create(self, request, runner_pk=None):
         session = ComputeSession.objects.all().filter(user=self.request.user, token=runner_pk).first()
