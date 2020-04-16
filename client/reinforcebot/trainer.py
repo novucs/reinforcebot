@@ -74,3 +74,5 @@ class CloudComputeTrainer:
         self.running = False
         self.thread.join()
         self.app.stop_runner(self.token)
+        path = self.agent_profile.backup()
+        self.app.upload_model(self.agent_profile.agent_id, path)

@@ -113,3 +113,16 @@ class App:
             alert(self.router.current_page.window, response.json()['detail'])
             return None
         return response.json()['parameters']
+
+    def upload_model(self, agent_id, path):
+        response = self.authorised_fetch(lambda headers: requests.patch(
+            API_URL + f'agents/{agent_id}/',
+            files={'parameters': (os.path.basename(path), open(path, 'rb'))},
+            data={'changeReason': 'Updated parameters'},
+            headers=headers,
+        ))
+
+        if response.status_code != 200:
+            notify('Agent parameters upload failed.')
+        else:
+            notify('Successfully uploaded agent parameters.')
