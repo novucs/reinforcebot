@@ -18,7 +18,7 @@ class SignInPage:
 
         self.window = self.builder.get_object("signin")
         self.window.set_title("ReinforceBot - Sign In")
-        self.window.connect("destroy", lambda *_: self.app.stop)
+        self.window.connect("destroy", lambda *_: self.app.stop())
         self.window.set_position(Gtk.WindowPosition.CENTER)
 
     def present(self):

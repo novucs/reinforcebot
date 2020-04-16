@@ -19,7 +19,7 @@ class HumanPreferenceChooser:
 
         self.window = self.builder.get_object("preference")
         self.window.set_title("ReinforceBot - Select Preference")
-        self.window.connect("destroy", lambda *_: self.app.stop)
+        self.window.connect("destroy", lambda *_: self.app.stop())
 
         self.trainer = None
         self.done_lock = None

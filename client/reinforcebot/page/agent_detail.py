@@ -37,7 +37,7 @@ class AgentDetailPage:
 
         self.window = self.builder.get_object("detail")
         self.window.set_title("ReinforceBot - Agent Detail")
-        self.window.connect("destroy", lambda *_: self.app.stop)
+        self.window.connect("destroy", lambda *_: self.app.stop())
         self.window.set_position(Gtk.WindowPosition.CENTER)
 
         self.screen_recorder = screen.Recorder()
