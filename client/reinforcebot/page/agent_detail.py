@@ -94,7 +94,6 @@ class AgentDetailPage:
         screen.select_area(lambda *coordinates: self.capture(*coordinates))
 
     def capture(self, x, y, width, height):
-        print('Captured screen coordinates:', x, y, width, height)
         self.screen_recorder.start(x, y, width, height, lambda image: self.set_preview(image))
         self.window.present()
 

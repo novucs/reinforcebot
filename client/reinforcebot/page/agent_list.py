@@ -160,7 +160,6 @@ class AgentListPage:
             try:
                 agent_profile = AgentProfile.download(CONFIG, self.app, agent['id'])
             except Exception as e:
-                print('Failed to download: ', e)
                 GLib.idle_add(failed)
                 return
             GLib.idle_add(finished)
