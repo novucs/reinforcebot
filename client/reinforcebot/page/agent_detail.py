@@ -10,14 +10,13 @@ from reinforcebot.config import BASE_URL, FRAME_DISPLAY_SIZE, FRAME_SIZE
 from reinforcebot.experience import handover_control, record_new_user_experience, record_user_experience
 from reinforcebot.human_preference_chooser import HumanPreferenceChooser
 from reinforcebot.messaging import alert, notify
+from reinforcebot.trainer import LocalTrainer
 
 
 # handover control F1
 # toggle training F2
 # reward shaping F3
 # stop recording F4
-from reinforcebot.trainer import LocalTrainer
-
 
 class AgentDetailPage:
     def __init__(self, app):
