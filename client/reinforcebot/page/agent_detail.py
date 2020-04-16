@@ -13,11 +13,6 @@ from reinforcebot.page.human_preference_chooser import HumanPreferenceChooser
 from reinforcebot.trainer import CloudComputeTrainer
 
 
-# handover control F1
-# toggle training F2
-# reward shaping F3
-# stop recording F4
-
 class AgentDetailPage:
     def __init__(self, app):
         self.app = app
@@ -162,7 +157,7 @@ class AgentDetailPage:
 
             self.control_lock.acquire()
             self.recording = True
-            notify('Your agent is now controlling the keyboard. Press ESC to stop. Press F3 to manage rewards.')
+            notify('Your agent is now controlling the keyboard. Press ESC to stop. Press F1 to manage rewards.')
             handover_control(self.screen_recorder, self.app.keyboard_recorder, trainer, self.open_preference_chooser)
             stopped_early = not trainer.running
 

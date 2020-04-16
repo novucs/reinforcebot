@@ -87,7 +87,7 @@ def handover_control(screen_recorder, keyboard_recorder, trainer, choose_prefere
         if Key.esc.value.vk in user_pressed_keys:
             break
 
-        if Key.f3.value.vk in user_pressed_keys:
+        if Key.f1.value.vk in user_pressed_keys:
             choose_preference(trainer)
             keyboard_recorder.read()
 
