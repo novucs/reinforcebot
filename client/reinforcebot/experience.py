@@ -4,11 +4,11 @@ import time
 import numpy as np
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
+from reinforcebotagent.replay_buffer import DynamicExperienceReplayBuffer
 from torchvision.transforms.functional import resize
 
 from reinforcebot.config import EXPERIENCE_BUFFER_SIZE, FRAME_SIZE, OBSERVATION_SPACE, STEP_SECONDS, \
     UPDATE_TARGET_PARAMETERS_STEPS
-from reinforcebotagent.replay_buffer import DynamicExperienceReplayBuffer
 
 
 class KeyboardBuffer:

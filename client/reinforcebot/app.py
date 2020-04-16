@@ -4,7 +4,7 @@ import os
 import requests
 from gi.repository import Gtk
 
-from reinforcebot.config import API_URL, SESSION_FILE
+from reinforcebot.config import API_URL, CONFIG, SESSION_FILE
 from reinforcebot.messaging import alert, notify
 from reinforcebot.router import PageRouter
 
@@ -68,11 +68,16 @@ class App:
             self.stop_runner(token)
         Gtk.main_quit()
 
-    def start_runner(self, agent_id, parameters):
+    def start_runner(self, agent_profile):
         response = self.authorised_fetch(
             lambda headers: requests.post(
                 API_URL + 'runners/',
-                json={'agent_id': agent_id, 'parameters': parameters},
+                json={
+                    'agent_id': agent_profile.agent_id,
+                    'parameters': agent_profile.agent.dump_parameters(),
+                    'config': CONFIG,
+                    'action_mapping': {k: list(v) for k, v in agent_profile.action_mapping.items()},
+                },
                 headers=headers,
             ))
 

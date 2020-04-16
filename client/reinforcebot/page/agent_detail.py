@@ -2,14 +2,15 @@ from threading import Lock, Thread
 
 import cairo
 from gi.repository import Gdk, GLib, Gtk
+from reinforcebotagent.trainer import LocalTrainer
 from torchvision.transforms.functional import resize
 
 from reinforcebot import screen
 from reinforcebot.config import BASE_URL, FRAME_DISPLAY_SIZE, FRAME_SIZE
 from reinforcebot.experience import handover_control, record_new_user_experience, record_user_experience
-from reinforcebot.page.human_preference_chooser import HumanPreferenceChooser
 from reinforcebot.messaging import alert, notify
-from reinforcebotagent.trainer import LocalTrainer, CloudComputeTrainer
+from reinforcebot.page.human_preference_chooser import HumanPreferenceChooser
+from reinforcebot.trainer import CloudComputeTrainer
 
 
 # handover control F1

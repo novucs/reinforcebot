@@ -267,8 +267,8 @@ class RunnerViewSet(viewsets.ViewSet):
         if profile.compute_credits <= 0:
             return Response({'detail': 'You have no remaining cloud compute credits'}, status=400)
 
-        if 'agent_id' not in self.request.data or 'parameters' not in self.request.data:
-            return Response({'detail': 'agent_id and parameters must be specified'}, status=400)
+        if len({'agent_id', 'parameters', 'config', 'action_mapping'} - set(self.request.data)) > 0:
+            return Response({'detail': 'config, agent_id and parameters must be specified'}, status=400)
 
         qs = Q(author=self.request.user) | Q(contributors__user=self.request.user)
         agent = Agent.objects.all().filter(id=self.request.data['agent_id']).filter(qs).first()
@@ -279,7 +279,12 @@ class RunnerViewSet(viewsets.ViewSet):
         for runner_id, url in CLOUD_COMPUTE_RUNNER_NODES.items():
             response = requests.post(
                 url + 'session/',
-                json={'token': token, 'parameters': self.request.data['parameters']}
+                json={
+                    'token': token,
+                    'parameters': self.request.data['parameters'],
+                    'config': self.request.data['config'],
+                    'action_mapping': self.request.data['action_mapping'],
+                }
             )
             if response.status_code == 200:
                 break

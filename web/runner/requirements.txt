@@ -2,3 +2,4 @@ Django==3.0.3
 gunicorn==20.0.4
 djangorestframework==3.11.0
 requests==2.23.0
+reinforcebotagent==0.0.3
