@@ -6,7 +6,7 @@ import numpy as np
 import requests
 from django.http import HttpResponse, JsonResponse
 
-from runner.settings import SESSION_LIMIT, API_URL, RUNNER_KEY
+from runner.settings import API_URL, RUNNER_KEY, SESSION_LIMIT
 
 
 class Session:

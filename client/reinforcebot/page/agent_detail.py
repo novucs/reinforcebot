@@ -1,4 +1,3 @@
-import time
 from threading import Lock, Thread
 
 import cairo
@@ -10,7 +9,7 @@ from reinforcebot.config import BASE_URL, FRAME_DISPLAY_SIZE, FRAME_SIZE
 from reinforcebot.experience import handover_control, record_new_user_experience, record_user_experience
 from reinforcebot.page.human_preference_chooser import HumanPreferenceChooser
 from reinforcebot.messaging import alert, notify
-from reinforcebot.trainer import LocalTrainer, CloudComputeTrainer
+from reinforcebotagent.trainer import LocalTrainer, CloudComputeTrainer
 
 
 # handover control F1
@@ -20,7 +19,6 @@ from reinforcebot.trainer import LocalTrainer, CloudComputeTrainer
 
 class AgentDetailPage:
     def __init__(self, app):
-        print('Created agent detail page')
         self.app = app
         self.builder = app.builder
         self.builder.get_object('back-to-agent-listing-button') \
@@ -110,7 +108,6 @@ class AgentDetailPage:
 
     def on_record_clicked(self):
         if self.recording:
-            alert(self.window, 'Experience is already being recorded')
             return
 
         if not self.screen_recorder.running:
@@ -139,7 +136,6 @@ class AgentDetailPage:
 
     def on_handover_control_clicked(self):
         if self.recording:
-            alert(self.window, 'Experience is already being recorded')
             return
 
         if not self.screen_recorder.running:

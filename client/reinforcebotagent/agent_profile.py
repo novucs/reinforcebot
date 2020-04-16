@@ -6,14 +6,14 @@ from threading import Lock
 
 import requests
 
-from reinforcebot import reward
-from reinforcebot.agent import Agent
-from reinforcebot.config import AGENTS_PATH, API_URL, CACHE_PATH, ENSEMBLE_SIZE, OBSERVATION_SPACE
-from reinforcebot.replay_buffer import ExperienceReplayBuffer, RewardReplayBuffer
+from reinforcebotagent.agent import Agent
+from reinforcebotagent import reward
+from reinforcebotagent.replay_buffer import ExperienceReplayBuffer, RewardReplayBuffer
 
 
 class AgentProfile:
-    def __init__(self):
+    def __init__(self, app_config):
+        self.app_config = app_config
         self.initialised = False
         self.loading_lock = Lock()
         self.agent = None
@@ -28,11 +28,18 @@ class AgentProfile:
         self.description = None
 
     def create_buffers(self):
+        observation_space = self.app_config['OBSERVATION_SPACE']
+        segment_size = self.app_config['SEGMENT_SIZE']
+        ensemble_size = self.app_config['ENSEMBLE_SIZE']
+        experience_buffer_size = self.app_config['EXPERIENCE_BUFFER_SIZE']
+        reward_buffer_size = self.app_config['REWARD_BUFFER_SIZE']
+
         if self.user_experience is None:
-            self.user_experience = ExperienceReplayBuffer(OBSERVATION_SPACE)
-        self.agent_experience = ExperienceReplayBuffer(OBSERVATION_SPACE)
-        self.reward_ensemble = reward.Ensemble(OBSERVATION_SPACE, len(self.action_mapping), ENSEMBLE_SIZE)
-        self.reward_buffer = RewardReplayBuffer(OBSERVATION_SPACE)
+            self.user_experience = ExperienceReplayBuffer(observation_space, experience_buffer_size)
+
+        self.agent_experience = ExperienceReplayBuffer(observation_space, experience_buffer_size)
+        self.reward_ensemble = reward.Ensemble(observation_space, len(self.action_mapping), ensemble_size)
+        self.reward_buffer = RewardReplayBuffer(observation_space, segment_size, reward_buffer_size)
 
     def load_initial_user_experience(self, action_mapping, user_experience):
         if self.initialised:
@@ -43,11 +50,12 @@ class AgentProfile:
         self.action_mapping = action_mapping
         self.user_experience = user_experience
         self.create_buffers()
-        self.agent = Agent(OBSERVATION_SPACE, len(action_mapping))
+        self.agent = Agent(self.app_config['OBSERVATION_SPACE'], len(action_mapping))
         self.loading_lock.release()
 
     def agent_path(self, create=True):
-        author_path = os.path.join(AGENTS_PATH, '_' if self.author is None else self.author['username'])
+        author_path = os.path.join(self.app_config['AGENTS_PATH'],
+                                   '_' if self.author is None else self.author['username'])
         path = os.path.join(author_path, self.name)
         if create:
             os.makedirs(path, exist_ok=True)
@@ -91,14 +99,14 @@ class AgentProfile:
         return path
 
     @staticmethod
-    def load(name, author=None):
+    def load(app_config, name, author=None):
         author_username = author['username'] if author else '_'
-        agent_path = os.path.join(AGENTS_PATH, author_username, name)
+        agent_path = os.path.join(app_config['AGENTS_PATH'], author_username, name)
 
         with open(os.path.join(agent_path, 'settings.json'), 'r') as settings_file:
             settings = json.load(settings_file)
 
-        profile = AgentProfile()
+        profile = AgentProfile(app_config)
         profile.initialised = settings['initialised']
         profile.author = settings['author']
         profile.agent_id = settings['agent_id']
@@ -118,17 +126,17 @@ class AgentProfile:
         return profile
 
     @staticmethod
-    def download(app, agent_id):
-        agent = app.authorised_fetch(lambda h: requests.get(API_URL + f'agents/{agent_id}/', headers=h))
+    def download(app_config, app, agent_id):
+        agent = app.authorised_fetch(lambda h: requests.get(app_config['API_URL'] + f'agents/{agent_id}/', headers=h))
         if agent is None:
             return None
 
         agent = agent.json()
-        author = requests.get(API_URL + f'users/{agent["author"]}/').json()
+        author = requests.get(app_config['API_URL'] + f'users/{agent["author"]}/').json()
 
-        author_path = os.path.join(AGENTS_PATH, author['username'])
+        author_path = os.path.join(app_config['AGENTS_PATH'], author['username'])
         agent_path = os.path.join(author_path, agent['name'])
-        tarfile = os.path.join(CACHE_PATH, agent['name'] + '.tar.gz')
+        tarfile = os.path.join(app_config['CACHE_PATH'], agent['name'] + '.tar.gz')
 
         os.makedirs(agent_path, exist_ok=True)
         with open(os.path.join(author_path, 'settings.json'), 'w') as settings_file:
@@ -149,4 +157,4 @@ class AgentProfile:
                 'description': agent['description'],
             }, settings_file, indent=2)
 
-        return AgentProfile.load(agent['name'], author)
+        return AgentProfile.load(app_config, agent['name'], author)

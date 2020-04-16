@@ -6,8 +6,9 @@ from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
 from torchvision.transforms.functional import resize
 
-from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE, STEP_SECONDS, UPDATE_TARGET_PARAMETERS_STEPS
-from reinforcebot.replay_buffer import DynamicExperienceReplayBuffer
+from reinforcebot.config import EXPERIENCE_BUFFER_SIZE, FRAME_SIZE, OBSERVATION_SPACE, STEP_SECONDS, \
+    UPDATE_TARGET_PARAMETERS_STEPS
+from reinforcebotagent.replay_buffer import DynamicExperienceReplayBuffer
 
 
 class KeyboardBuffer:
@@ -46,7 +47,7 @@ def convert_frame(frame):
 def record_new_user_experience(screen_recorder, agent_profile):
     keyboard_recorder = KeyboardBuffer()
     keyboard_recorder.start()
-    buffer = DynamicExperienceReplayBuffer(OBSERVATION_SPACE)
+    buffer = DynamicExperienceReplayBuffer(OBSERVATION_SPACE, EXPERIENCE_BUFFER_SIZE)
     previous_frame = np.zeros(FRAME_SIZE)
     frame = convert_frame(screen_recorder.cache)
 

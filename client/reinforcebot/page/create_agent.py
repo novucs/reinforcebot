@@ -3,8 +3,8 @@ import os
 import requests
 from gi.repository import Gtk
 
-from reinforcebot.agent_profile import AgentProfile
-from reinforcebot.config import API_URL
+from reinforcebotagent.agent_profile import AgentProfile
+from reinforcebot.config import API_URL, CONFIG
 from reinforcebot.messaging import alert, ask
 
 
@@ -32,7 +32,7 @@ class CreateAgentPage:
             alert(self.window, 'Agents must have a name and a description')
             return
 
-        agent_profile = AgentProfile()
+        agent_profile = AgentProfile(CONFIG)
         agent_profile.name = name
         agent_profile.description = description
         agent_profile.author = self.app.user

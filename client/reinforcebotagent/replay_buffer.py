@@ -3,11 +3,9 @@ import os
 
 import numpy as np
 
-from reinforcebot.config import SEGMENT_SIZE
-
 
 class RewardReplayBuffer:
-    def __init__(self, observation_space, segment_size=SEGMENT_SIZE, max_size=16):
+    def __init__(self, observation_space, segment_size, max_size):
         self.o1 = np.empty((max_size, segment_size, *observation_space), dtype=np.float32)
         self.a1 = np.empty((max_size, segment_size), dtype=np.int8)
         self.o2 = np.empty((max_size, segment_size, *observation_space), dtype=np.float32)
@@ -30,7 +28,7 @@ class RewardReplayBuffer:
         self.index = (self.index + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
-    def read(self, batch_size=8):
+    def read(self, batch_size):
         indices = np.random.randint(0, self.size, size=batch_size)
         return (
             (self.o1[indices], self.a1[indices]),
@@ -72,7 +70,7 @@ class RewardReplayBuffer:
 
 
 class ExperienceReplayBuffer:
-    def __init__(self, observation_space, max_size=int(2.5e5)):
+    def __init__(self, observation_space, max_size):
         self.o = np.empty((max_size, *observation_space), dtype=np.float32)
         self.a = np.empty((max_size,), dtype=np.int8)
         self.n = np.empty((max_size, *observation_space), dtype=np.float32)
@@ -88,7 +86,7 @@ class ExperienceReplayBuffer:
         self.index = (self.index + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
-    def read(self, batch_size=128):
+    def read(self, batch_size):
         indices = np.random.randint(0, self.size, size=batch_size)
         return (
             self.o[indices],
@@ -96,7 +94,7 @@ class ExperienceReplayBuffer:
             self.n[indices],
         )
 
-    def sample_segment(self, size=SEGMENT_SIZE):
+    def sample_segment(self, size):
         start = np.random.randint(0, self.size - size)
         stop = start + size
         o = self.o[start:stop]
@@ -132,7 +130,7 @@ class ExperienceReplayBuffer:
 
 
 class DynamicExperienceReplayBuffer(ExperienceReplayBuffer):
-    def __init__(self, observation_space, max_size=int(2.5e5)):
+    def __init__(self, observation_space, max_size):
         super(DynamicExperienceReplayBuffer, self).__init__(observation_space, max_size)
         self.a = [''] * max_size
         self.action_space = {'', }

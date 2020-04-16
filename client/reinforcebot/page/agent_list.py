@@ -6,8 +6,8 @@ from concurrent.futures.thread import ThreadPoolExecutor
 import requests
 from gi.repository import GLib, Gtk
 
-from reinforcebot.agent_profile import AgentProfile
-from reinforcebot.config import API_URL
+from reinforcebotagent.agent_profile import AgentProfile
+from reinforcebot.config import API_URL, CONFIG
 from reinforcebot.messaging import alert
 
 
@@ -158,7 +158,7 @@ class AgentListPage:
                 alert(self.window, f'Cannot open {agent["name"]}. It may be a corrupt save.')
 
             try:
-                agent_profile = AgentProfile.download(self.app, agent['id'])
+                agent_profile = AgentProfile.download(CONFIG, self.app, agent['id'])
             except Exception as e:
                 print('Failed to download: ', e)
                 GLib.idle_add(failed)

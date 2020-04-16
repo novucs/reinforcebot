@@ -1,5 +1,5 @@
 import cairo
-from gi.repository import Gdk, GLib, Gtk
+from gi.repository import Gdk, GLib
 from PIL import Image
 from torchvision.transforms.functional import resize
 
@@ -32,7 +32,7 @@ class HumanPreferenceChooser:
         self.trainer = trainer
         self.done_lock = done_lock
         self.running = True
-        self.segment1, self.segment2 = trainer.sample_segments()
+        self.segment1, self.segment2 = trainer.sample_segments(SEGMENT_SIZE)
         GLib.idle_add(self.render_segments)
         self.window.present()
         self.done_lock.acquire()
