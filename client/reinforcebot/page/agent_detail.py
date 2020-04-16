@@ -16,6 +16,7 @@ from reinforcebot.messaging import alert, notify
 # toggle training F2
 # reward shaping F3
 # stop recording F4
+from reinforcebot.trainer import LocalTrainer
 
 
 class AgentDetailPage:
@@ -46,6 +47,7 @@ class AgentDetailPage:
         self.control_lock = Lock()
         self.recording = False
         self.using_cloud_compute = False
+        self.human_preference_chooser = HumanPreferenceChooser(self.builder)
 
     def present(self, agent_profile):
         self.agent_profile = agent_profile
@@ -156,7 +158,10 @@ class AgentDetailPage:
             notify('Your agent is now controlling the keyboard. Press ESC to stop. Press F3 to manage rewards.')
             self.agent_profile.loading_lock.acquire()  # wait until agent config has loaded
             self.agent_profile.loading_lock.release()
-            handover_control(self.screen_recorder, self.agent_profile, self.open_preference_chooser)
+            trainer = LocalTrainer(self.agent_profile)
+            trainer.start()
+            handover_control(self.screen_recorder, trainer, self.open_preference_chooser)
+            trainer.stop()
             GLib.idle_add(lambda: self.window.show())
             alert(self.window, 'Agent control has been lifted')
             self.recording = False
@@ -174,12 +179,12 @@ class AgentDetailPage:
             return
         self.using_cloud_compute = not self.using_cloud_compute
 
-    def open_preference_chooser(self):
+    def open_preference_chooser(self, trainer):
         init_lock = Lock()
         done_lock = Lock()
 
         def open_chooser():
-            HumanPreferenceChooser(self.builder, self.agent_profile, done_lock)
+            self.human_preference_chooser.present(trainer, done_lock)
             init_lock.release()
             return False
 

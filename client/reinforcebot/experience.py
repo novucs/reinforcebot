@@ -1,16 +1,14 @@
 import itertools
 import time
-from threading import Thread
 
 import numpy as np
-import torch
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
 from torchvision.transforms.functional import resize
 
-from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE, SEGMENT_SIZE, STEP_SECONDS, \
-    UPDATE_TARGET_PARAMETERS_STEPS
+from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE, STEP_SECONDS, UPDATE_TARGET_PARAMETERS_STEPS
 from reinforcebot.replay_buffer import DynamicExperienceReplayBuffer
+from reinforcebot.trainer import LocalTrainer
 
 
 class KeyboardBuffer:
@@ -107,11 +105,7 @@ def record_user_experience(screen_recorder, agent_profile):
     keyboard_recorder.stop()
 
 
-def handover_control(screen_recorder, agent_profile, choose_preference):
-    agent, action_mapping, experience_buffer, reward_ensemble, reward_buffer = \
-        agent_profile.agent, agent_profile.action_mapping, agent_profile.agent_experience, \
-        agent_profile.reward_ensemble, agent_profile.reward_buffer
-
+def handover_control(screen_recorder, trainer, choose_preference):
     keyboard_recorder = KeyboardBuffer()
     keyboard_recorder.start()
     controller = keyboard.Controller()
@@ -119,47 +113,23 @@ def handover_control(screen_recorder, agent_profile, choose_preference):
     previous_frame = np.zeros(FRAME_SIZE)
     frame = convert_frame(screen_recorder.cache)
     step = 0
-    running = True
-
-    def train():
-        while running:
-            if experience_buffer.size < SEGMENT_SIZE:
-                time.sleep(1)
-                continue
-
-            o, a, n = experience_buffer.read()
-
-            with torch.no_grad():
-                r = reward_ensemble.predict(o, a).numpy()
-
-            d = np.zeros(a.shape, dtype=np.float32)
-            agent.train((o, a, r, n, d))
-
-            if reward_buffer.size > 0:
-                s1, s2, p = reward_buffer.read()
-                reward_ensemble.train(s1, s2, p)
-
-    train_thread = Thread(target=train)
-    train_thread.start()
     step_start = time.time()
 
     while True:
         user_pressed_keys = keyboard_recorder.read()
         if Key.esc.value.vk in user_pressed_keys:
-            running = False
-            train_thread.join()
             break
 
         if Key.f3.value.vk in user_pressed_keys:
-            choose_preference()
+            choose_preference(trainer)
             keyboard_recorder.read()
 
         step += 1
         observation = np.stack((previous_frame, frame))
-        action = agent.act(observation)
+        action = trainer.agent_profile.agent.act(observation)
 
-        released_keys = pressed_keys - action_mapping[action]
-        pressed_keys = action_mapping[action]
+        released_keys = pressed_keys - trainer.agent_profile.action_mapping[action]
+        pressed_keys = trainer.agent_profile.action_mapping[action]
 
         for key in released_keys:
             controller.release(KeyCode.from_vk(key))
@@ -172,11 +142,11 @@ def handover_control(screen_recorder, agent_profile, choose_preference):
 
         next_frame = convert_frame(screen_recorder.cache)
         next_observation = np.stack((frame, next_frame))
-        experience_buffer.write(observation, action, next_observation)
+        trainer.experience({'agent_transition': (observation, action, next_observation)})
         previous_frame, frame = frame, next_frame
 
         if step % UPDATE_TARGET_PARAMETERS_STEPS == 0:
-            agent.critic_target.load_state_dict(agent.critic.state_dict())
+            trainer.agent_profile.agent.update_targets()
 
     for key in pressed_keys:
         controller.release(KeyCode.from_vk(key))

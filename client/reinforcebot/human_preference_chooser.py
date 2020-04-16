@@ -7,15 +7,7 @@ from reinforcebot.config import FRAME_DISPLAY_SIZE, SEGMENT_SIZE
 
 
 class HumanPreferenceChooser:
-    def __init__(self, builder, agent_config, done_lock):
-        self.done_lock = done_lock
-        self.done_lock.acquire()
-        self.running = True
-        self.frame_id = 0
-        self.agent_config = agent_config
-        self.segment1 = self.agent_config.agent_experience.sample_segment()
-        self.segment2 = self.agent_config.agent_experience.sample_segment()
-
+    def __init__(self, builder):
         self.builder = builder
         self.builder.get_object('button-video1') \
             .connect("clicked", lambda *_: self.on_chosen_preference(1.0), None)
@@ -25,11 +17,24 @@ class HumanPreferenceChooser:
             .connect("clicked", lambda *_: self.on_chosen_preference(0.0), None)
 
         self.window = self.builder.get_object("preference")
-        self.window.set_title("reinforcebot")
+        self.window.set_title("ReinforceBot - Select Preference")
         self.window.connect("destroy", Gtk.main_quit)
-        self.window.present()
 
-        self.render_segments()
+        self.trainer = None
+        self.done_lock = None
+        self.running = False
+        self.frame_id = 0
+        self.segment1 = None
+        self.segment2 = None
+
+    def present(self, trainer, done_lock):
+        self.trainer = trainer
+        self.done_lock = done_lock
+        self.running = True
+        self.segment1, self.segment2 = trainer.sample_segments()
+        GLib.idle_add(self.render_segments)
+        self.window.present()
+        self.done_lock.acquire()
 
     def stop(self):
         if not self.running:
@@ -39,7 +44,7 @@ class HumanPreferenceChooser:
         self.done_lock.release()
 
     def on_chosen_preference(self, preference):
-        self.agent_config.reward_buffer.write(self.segment1, self.segment2, preference)
+        self.trainer.experience({'rewards': (self.segment1, self.segment2, preference)})
         self.stop()
         self.window.hide()
 
