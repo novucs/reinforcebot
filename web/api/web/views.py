@@ -267,8 +267,8 @@ class RunnerViewSet(viewsets.ViewSet):
         if profile.compute_credits <= 0:
             return Response({'detail': 'You have no remaining cloud compute credits'}, status=400)
 
-        if 'agent_id' not in self.request.data:
-            return Response({'detail': 'agent_id was not specified'}, status=400)
+        if 'agent_id' not in self.request.data or 'parameters' not in self.request.data:
+            return Response({'detail': 'agent_id and parameters must be specified'}, status=400)
 
         qs = Q(author=self.request.user) | Q(contributors__user=self.request.user)
         agent = Agent.objects.all().filter(id=self.request.data['agent_id']).filter(qs).first()
@@ -277,7 +277,10 @@ class RunnerViewSet(viewsets.ViewSet):
 
         token = get_random_string(length=32)
         for runner_id, url in CLOUD_COMPUTE_RUNNER_NODES.items():
-            response = requests.post(url + 'session/', json={'token': token})
+            response = requests.post(
+                url + 'session/',
+                json={'token': token, 'parameters': self.request.data['parameters']}
+            )
             if response.status_code == 200:
                 break
         else:
@@ -298,11 +301,9 @@ class RunnerViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk):
         session = self.get_session_or_404(pk)
         if session.cancelled:
-            session.delete()
             return Response({'detail': 'Runner was cancelled due to lack of credits'}, status=429)
         response = requests.get(session.url)
         if response.status_code == 404:
-            session.delete()
             return Response(status=404)
         return Response(response.json())
 
@@ -333,7 +334,6 @@ class RunnerExperienceViewSet(viewsets.ViewSet):
         if session is None:
             raise Http404
         if session.cancelled:
-            session.delete()
             return Response({'detail': 'Runner was cancelled due to lack of credits'}, status=429)
         response = requests.post(session.url + '/experience/', json=request.data)
         return Response(response.json())

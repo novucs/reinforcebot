@@ -8,9 +8,9 @@ from torchvision.transforms.functional import resize
 from reinforcebot import screen
 from reinforcebot.config import BASE_URL, FRAME_DISPLAY_SIZE, FRAME_SIZE
 from reinforcebot.experience import handover_control, record_new_user_experience, record_user_experience
-from reinforcebot.human_preference_chooser import HumanPreferenceChooser
+from reinforcebot.page.human_preference_chooser import HumanPreferenceChooser
 from reinforcebot.messaging import alert, notify
-from reinforcebot.trainer import LocalTrainer
+from reinforcebot.trainer import LocalTrainer, CloudComputeTrainer
 
 
 # handover control F1
@@ -38,7 +38,7 @@ class AgentDetailPage:
 
         self.window = self.builder.get_object("detail")
         self.window.set_title("ReinforceBot - Agent Detail")
-        self.window.connect("destroy", Gtk.main_quit)
+        self.window.connect("destroy", lambda *_: self.app.stop)
         self.window.set_position(Gtk.WindowPosition.CENTER)
 
         self.screen_recorder = screen.Recorder()
@@ -46,7 +46,7 @@ class AgentDetailPage:
         self.control_lock = Lock()
         self.recording = False
         self.using_cloud_compute = False
-        self.human_preference_chooser = HumanPreferenceChooser(self.builder)
+        self.human_preference_chooser = HumanPreferenceChooser(self.app, self.builder)
 
     def present(self, agent_profile):
         self.agent_profile = agent_profile
@@ -151,23 +151,35 @@ class AgentDetailPage:
             return
 
         def control():
-            self.control_lock.acquire()
-            self.recording = True
-            time.sleep(1)
-            notify('Your agent is now controlling the keyboard. Press ESC to stop. Press F3 to manage rewards.')
             self.agent_profile.loading_lock.acquire()  # wait until agent config has loaded
             self.agent_profile.loading_lock.release()
-            trainer = LocalTrainer(self.agent_profile)
-            trainer.start()
+
+            if self.using_cloud_compute:
+                trainer = CloudComputeTrainer(self.app, self.agent_profile)
+                succeeded = trainer.start()
+                if not succeeded:
+                    GLib.idle_add(lambda: self.window.show())
+                    return
+            else:
+                trainer = LocalTrainer(self.agent_profile)
+                trainer.start()
+
+            self.control_lock.acquire()
+            self.recording = True
+            GLib.idle_add(lambda: self.window.hide())
+            notify('Your agent is now controlling the keyboard. Press ESC to stop. Press F3 to manage rewards.')
             handover_control(self.screen_recorder, trainer, self.open_preference_chooser)
+            stopped_early = not trainer.running
             trainer.stop()
+
+            if not stopped_early:
+                alert(self.window, 'Agent control has been lifted')
+
             GLib.idle_add(lambda: self.window.show())
-            alert(self.window, 'Agent control has been lifted')
             self.recording = False
             self.agent_profile.save()
             self.control_lock.release()
 
-        self.window.hide()
         thread = Thread(target=control)
         thread.start()
 

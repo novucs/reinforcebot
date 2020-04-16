@@ -18,7 +18,7 @@ class SignInPage:
 
         self.window = self.builder.get_object("signin")
         self.window.set_title("ReinforceBot - Sign In")
-        self.window.connect("destroy", Gtk.main_quit)
+        self.window.connect("destroy", lambda *_: self.app.stop)
         self.window.set_position(Gtk.WindowPosition.CENTER)
 
     def present(self):
@@ -27,8 +27,13 @@ class SignInPage:
     def on_sign_in_clicked(self):
         username = self.builder.get_object('username').get_text()
         password = self.builder.get_object('password').get_text()
-        jwt = requests.post(API_URL + 'auth/jwt/create/',
-                            json={'username': username, 'password': password}).json()
+        try:
+            jwt = requests.post(API_URL + 'auth/jwt/create/',
+                                json={'username': username, 'password': password}).json()
+        except:
+            alert(self.window, 'Unable to connect to online services')
+            return
+
         if 'access' not in jwt or 'refresh' not in jwt:
             alert(self.window, 'No active account found with the given credentials')
             return

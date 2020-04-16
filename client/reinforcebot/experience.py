@@ -8,7 +8,6 @@ from torchvision.transforms.functional import resize
 
 from reinforcebot.config import FRAME_SIZE, OBSERVATION_SPACE, STEP_SECONDS, UPDATE_TARGET_PARAMETERS_STEPS
 from reinforcebot.replay_buffer import DynamicExperienceReplayBuffer
-from reinforcebot.trainer import LocalTrainer
 
 
 class KeyboardBuffer:
@@ -115,7 +114,7 @@ def handover_control(screen_recorder, trainer, choose_preference):
     step = 0
     step_start = time.time()
 
-    while True:
+    while trainer.running:
         user_pressed_keys = keyboard_recorder.read()
         if Key.esc.value.vk in user_pressed_keys:
             break

@@ -19,7 +19,7 @@ class CreateAgentPage:
 
         self.window = self.builder.get_object("create-agent")
         self.window.set_title("ReinforceBot - Create Agent")
-        self.window.connect("destroy", Gtk.main_quit)
+        self.window.connect("destroy", lambda *_: self.app.stop)
         self.window.set_position(Gtk.WindowPosition.CENTER)
 
     def present(self):

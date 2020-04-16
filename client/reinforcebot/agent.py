@@ -81,6 +81,16 @@ class Agent:
 
     def update_targets(self):
         self.critic_target.load_state_dict(self.critic.state_dict())
+        self.critic_target.eval()
+
+    def dump_parameters(self):
+        return [p.detach().cpu().numpy().tolist() for p in self.critic.parameters()]
+
+    def load_parameters(self, parameters):
+        for param, target_param in zip(parameters, self.critic.parameters()):
+            target_param.data.copy_(torch.from_numpy(np.array(param)))
+        self.critic.eval()
+        self.update_targets()
 
     def save(self, path):
         os.makedirs(path, exist_ok=True)

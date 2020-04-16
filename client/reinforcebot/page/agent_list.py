@@ -39,7 +39,7 @@ class AgentListPage:
 
         self.window = self.builder.get_object("agentlist")
         self.window.set_title("ReinforceBot - Agent List")
-        self.window.connect("destroy", Gtk.main_quit)
+        self.window.connect("destroy", lambda *_: self.app.stop)
         self.window.set_position(Gtk.WindowPosition.CENTER)
 
         def pulse_progress_bar(_):

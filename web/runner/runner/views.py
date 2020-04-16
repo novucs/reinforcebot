@@ -10,13 +10,13 @@ from runner.settings import SESSION_LIMIT, API_URL, RUNNER_KEY
 
 
 class Session:
-    def __init__(self, runner, session_id, token):
+    def __init__(self, runner, session_id, token, parameters):
         self.runner = runner
         self.session_id = session_id
         self.token = token
         self.running = True
         self.thread = None
-        self.parameters = np.zeros((1, 2))
+        self.parameters = np.array(parameters)
 
     def run(self):
         while self.running:
@@ -28,7 +28,7 @@ class Session:
                 'used': (time_elapsed / 60) / 60,
             })
 
-            if response.json()['cancel']:
+            if response.json().get('cancel', False):
                 self.running = False
 
         self.runner.session_ended(self.session_id)
@@ -45,11 +45,11 @@ class Runner:
     def is_available(self):
         return len(self.sessions) < SESSION_LIMIT
 
-    def start(self, token):
+    def start(self, token, parameters):
         if not self.is_available():
             return None
         session_id = self.index = self.index + 1
-        session = Session(self, session_id, token)
+        session = Session(self, session_id, token, parameters)
         self.sessions[session_id] = session
         session.thread = Thread(target=session.run)
         session.thread.start()
@@ -63,7 +63,6 @@ class Runner:
             return None
         session = self.sessions[session_id]
         session.running = False
-        session.thread.join()
         return session.parameters
 
 
@@ -72,8 +71,10 @@ _runner = Runner()
 
 def handle_sessions(request):
     if request.method == 'POST':
-        token = json.loads(request.body)['token']
-        session_id = _runner.start(token)
+        data = json.loads(request.body)
+        token = data['token']
+        parameters = data['parameters']
+        session_id = _runner.start(token, parameters)
         if session_id is None:
             return JsonResponse({'detail': 'Session limit reached'}, status=429)
         return JsonResponse({'session_id': session_id})

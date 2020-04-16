@@ -2,9 +2,10 @@ import json
 import os
 
 import requests
+from gi.repository import Gtk
 
-from reinforcebot.config import SESSION_FILE, API_URL
-from reinforcebot.messaging import notify
+from reinforcebot.config import API_URL, SESSION_FILE
+from reinforcebot.messaging import alert, notify
 from reinforcebot.router import PageRouter
 
 
@@ -16,6 +17,7 @@ class App:
         self.signed_in = False
         self.jwt_access = None
         self.jwt_refresh = None
+        self.tokens = set()
 
     def authorised_fetch(self, callback):
         try:
@@ -61,18 +63,29 @@ class App:
         self.router.setup()
         self.router.route('agent_list' if self.sign_in() else 'sign_in')
 
-    def start_runner(self, agent_id):
+    def stop(self):
+        for token in list(*self.tokens):
+            self.stop_runner(token)
+        Gtk.main_quit()
+
+    def start_runner(self, agent_id, parameters):
         response = self.authorised_fetch(
-            lambda headers: requests.post(API_URL + 'runners/', json={'agent_id': agent_id}, headers=headers))
+            lambda headers: requests.post(
+                API_URL + 'runners/',
+                json={'agent_id': agent_id, 'parameters': parameters},
+                headers=headers,
+            ))
+
         if response.status_code != 200:
-            notify(response.json()['detail'])
+            alert(self.router.current_page.window, response.json()['detail'])
             return None
-        return response.json()['token']
+        token = response.json()['token']
+        self.tokens.add(token)
+        return token
 
     def fetch_runner_parameters(self, token):
         response = self.authorised_fetch(lambda headers: requests.get(API_URL + f'runners/{token}/', headers=headers))
         if response.status_code != 200:
-            notify(response.json()['detail'])
             return None
         return response.json()['parameters']
 
@@ -80,14 +93,14 @@ class App:
         response = self.authorised_fetch(
             lambda headers: requests.post(API_URL + f'runners/{token}/experience/', json=experience, headers=headers))
         if response.status_code != 200:
-            notify(response.json()['detail'])
             return None
         return response.json()['parameters']
 
     def stop_runner(self, token):
+        self.tokens.remove(token)
         response = self.authorised_fetch(
             lambda headers: requests.delete(API_URL + f'runners/{token}/', headers=headers))
         if response.status_code != 200:
-            notify(response.json()['detail'])
+            alert(self.router.current_page.window, response.json()['detail'])
             return None
         return response.json()['parameters']

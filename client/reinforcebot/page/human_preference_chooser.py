@@ -7,7 +7,8 @@ from reinforcebot.config import FRAME_DISPLAY_SIZE, SEGMENT_SIZE
 
 
 class HumanPreferenceChooser:
-    def __init__(self, builder):
+    def __init__(self, app, builder):
+        self.app = app
         self.builder = builder
         self.builder.get_object('button-video1') \
             .connect("clicked", lambda *_: self.on_chosen_preference(1.0), None)
@@ -18,7 +19,7 @@ class HumanPreferenceChooser:
 
         self.window = self.builder.get_object("preference")
         self.window.set_title("ReinforceBot - Select Preference")
-        self.window.connect("destroy", Gtk.main_quit)
+        self.window.connect("destroy", lambda *_: self.app.stop)
 
         self.trainer = None
         self.done_lock = None
