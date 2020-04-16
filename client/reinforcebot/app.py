@@ -18,17 +18,21 @@ class App:
         self.jwt_refresh = None
 
     def authorised_fetch(self, callback):
-        if not self.signed_in:
-            return callback({})
+        try:
+            if not self.signed_in:
+                return callback({})
 
-        response = callback({'Authorization': f'JWT {self.jwt_access}'})
-
-        if response.status_code == 401:
-            response = requests.post(API_URL + 'auth/jwt/refresh/', json={'refresh': self.jwt_refresh})
-            if response.status_code != 200:
-                return None
-            self.jwt_access = response.json()['access']
             response = callback({'Authorization': f'JWT {self.jwt_access}'})
+
+            if response.status_code == 401:
+                response = requests.post(API_URL + 'auth/jwt/refresh/', json={'refresh': self.jwt_refresh})
+                if response.status_code != 200:
+                    return None
+                self.jwt_access = response.json()['access']
+                response = callback({'Authorization': f'JWT {self.jwt_access}'})
+        except:
+            notify('Unable to connect to online services')
+            return None
         return response
 
     def sign_in(self):

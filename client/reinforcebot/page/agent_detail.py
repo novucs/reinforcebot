@@ -33,6 +33,8 @@ class AgentDetailPage:
             .connect("clicked", lambda *_: self.on_record_clicked(), None)
         self.builder.get_object('handover-control-button') \
             .connect("clicked", lambda *_: self.on_handover_control_clicked(), None)
+        self.builder.get_object('cloud-compute-button') \
+            .connect("notify::active", lambda *_: self.on_use_cloud_compute_clicked(), None)
 
         self.window = self.builder.get_object("detail")
         self.window.set_title("ReinforceBot - Agent Detail")
@@ -43,6 +45,7 @@ class AgentDetailPage:
         self.agent_profile = None
         self.control_lock = Lock()
         self.recording = False
+        self.using_cloud_compute = False
 
     def present(self, agent_profile):
         self.agent_profile = agent_profile
@@ -53,12 +56,20 @@ class AgentDetailPage:
         self.builder.get_object('agent-name-label').set_text(self.agent_profile.name)
         self.builder.get_object('agent-description-label').set_text(description)
 
+        self.builder.get_object('read-more-label').hide()
+        self.builder.get_object('agent-link-label').hide()
+        self.builder.get_object('cloud-compute-box').hide()
+        self.builder.get_object('cloud-compute-button').set_active(self.using_cloud_compute)
+
         if self.agent_profile.agent_id:
             link = BASE_URL + f'agent/{self.agent_profile.agent_id}/'
             self.builder.get_object('agent-link-label').set_label(link)
             self.builder.get_object('agent-link-label').set_uri(link)
             self.builder.get_object('read-more-label').show()
             self.builder.get_object('agent-link-label').show()
+
+            if self.app.signed_in:
+                self.builder.get_object('cloud-compute-box').show()
 
         self.window.present()
 
@@ -155,6 +166,13 @@ class AgentDetailPage:
         self.window.hide()
         thread = Thread(target=control)
         thread.start()
+
+    def on_use_cloud_compute_clicked(self):
+        if self.recording:
+            self.builder.get_object('cloud-compute-button').set_active(self.using_cloud_compute)
+            alert(self.window, 'Cannot switch compute runner while recording')
+            return
+        self.using_cloud_compute = not self.using_cloud_compute
 
     def open_preference_chooser(self):
         init_lock = Lock()
