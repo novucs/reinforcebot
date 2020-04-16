@@ -12,6 +12,8 @@ services:
   runner:
     build: ./runner
     command: gunicorn runner.wsgi:application --reload --bind 0.0.0.0:8000
+    stdin_open: true
+    tty: true
     volumes:
       - ./runner:/usr/src/app/
     env_file:

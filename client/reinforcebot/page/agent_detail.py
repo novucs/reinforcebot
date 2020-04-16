@@ -119,11 +119,11 @@ class AgentDetailPage:
             self.recording = True
             notify('Recording has begun. Press ESC to stop.')
             if not self.agent_profile.initialised:
-                record_new_user_experience(self.screen_recorder, self.agent_profile)
+                record_new_user_experience(self.screen_recorder, self.app.keyboard_recorder, self.agent_profile)
                 GLib.idle_add(lambda: self.window.show())
                 alert(self.window, 'Successfully saved user experience with new action set')
             else:
-                record_user_experience(self.screen_recorder, self.agent_profile)
+                record_user_experience(self.screen_recorder, self.app.keyboard_recorder, self.agent_profile)
                 GLib.idle_add(lambda: self.window.show())
                 alert(self.window, 'Successfully saved user experience')
             self.recording = False
@@ -162,20 +162,21 @@ class AgentDetailPage:
 
             self.control_lock.acquire()
             self.recording = True
-            GLib.idle_add(lambda: self.window.hide())
             notify('Your agent is now controlling the keyboard. Press ESC to stop. Press F3 to manage rewards.')
-            handover_control(self.screen_recorder, trainer, self.open_preference_chooser)
+            handover_control(self.screen_recorder, self.app.keyboard_recorder, trainer, self.open_preference_chooser)
             stopped_early = not trainer.running
-            trainer.stop()
 
             if not stopped_early:
                 alert(self.window, 'Agent control has been lifted')
 
             GLib.idle_add(lambda: self.window.show())
+
+            trainer.stop()
             self.recording = False
             self.agent_profile.save()
             self.control_lock.release()
 
+        self.window.hide()
         thread = Thread(target=control)
         thread.start()
 

@@ -50,31 +50,32 @@ class Session:
         self.runner.session_ended(self.session_id)
         self.trainer.stop()
 
-    def load_experience(self, experience):
-        parsed = {}
+    def load_experience(self, batch):
+        for experience in batch['batch']:
+            parsed = {}
 
-        if 'agent_transition' in experience:
-            transition = experience['agent_transition']
-            observation = np.array(transition['observation'])
-            action = np.array(transition['action'])
-            next_observation = np.array(transition['next_observation'])
-            parsed['agent_transition'] = (observation, action, next_observation)
+            if 'agent_transition' in experience:
+                transition = experience['agent_transition']
+                observation = np.array(transition['observation'])
+                action = transition['action']
+                next_observation = np.array(transition['next_observation'])
+                parsed['agent_transition'] = (observation, action, next_observation)
 
-        if 'user_transition' in experience:
-            transition = experience['user_transition']
-            observation = np.array(transition['observation'])
-            action = np.array(transition['action'])
-            next_observation = np.array(transition['next_observation'])
-            parsed['user_transition'] = (observation, action, next_observation)
+            if 'user_transition' in experience:
+                transition = experience['user_transition']
+                observation = np.array(transition['observation'])
+                action = transition['action']
+                next_observation = np.array(transition['next_observation'])
+                parsed['user_transition'] = (observation, action, next_observation)
 
-        if 'rewards' in experience:
-            rewards = experience['rewards']
-            segment1 = np.array(rewards['segment1'])
-            segment2 = np.array(rewards['segment2'])
-            preference = rewards['preference']
-            parsed['rewards'] = (segment1, segment2, preference)
+            if 'rewards' in experience:
+                rewards = experience['rewards']
+                segment1 = np.array(rewards['segment1'])
+                segment2 = np.array(rewards['segment2'])
+                preference = rewards['preference']
+                parsed['rewards'] = (segment1, segment2, preference)
 
-        self.trainer.experience(parsed)
+            self.trainer.experience(parsed)
 
     def dump_parameters(self):
         return self.profile.agent.dump_parameters()

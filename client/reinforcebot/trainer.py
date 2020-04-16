@@ -9,6 +9,7 @@ class CloudComputeTrainer:
         self.token = None
         self.running = False
         self.thread = None
+        self.batch = []
 
     def start(self):
         self.token = self.app.start_runner(self.agent_profile)
@@ -23,7 +24,9 @@ class CloudComputeTrainer:
     def run(self):
         while self.running:
             time.sleep(1)
-            parameters = self.app.fetch_runner_parameters(self.token)
+            self.batch, batch = [], self.batch
+            parameters = self.app.add_runner_experience(self.token, {'batch': batch})
+
             if not parameters:
                 self.running = False
                 break
@@ -38,7 +41,7 @@ class CloudComputeTrainer:
             self.agent_profile.agent_experience.write(observation, action, next_observation)
             payload['agent_transition'] = {
                 'observation': observation.tolist(),
-                'action': observation.tolist(),
+                'action': action,
                 'next_observation': next_observation.tolist(),
             }
 
@@ -47,7 +50,7 @@ class CloudComputeTrainer:
             self.agent_profile.user_experience.write(observation, action, next_observation)
             payload['user_transition'] = {
                 'observation': observation.tolist(),
-                'action': observation.tolist(),
+                'action': action,
                 'next_observation': next_observation.tolist(),
             }
 
@@ -60,7 +63,7 @@ class CloudComputeTrainer:
                 'preference': preference,
             }
 
-        self.app.add_runner_experience(self.token, payload)
+        self.batch.append(payload)
 
     def sample_segments(self, segment_size):
         segment1 = self.agent_profile.agent_experience.sample_segment(segment_size)

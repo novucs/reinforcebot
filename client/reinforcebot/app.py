@@ -5,6 +5,7 @@ import requests
 from gi.repository import Gtk
 
 from reinforcebot.config import API_URL, CONFIG, SESSION_FILE
+from reinforcebot.keyboard_recorder import KeyboardRecorder
 from reinforcebot.messaging import alert, notify
 from reinforcebot.router import PageRouter
 
@@ -18,6 +19,7 @@ class App:
         self.jwt_access = None
         self.jwt_refresh = None
         self.tokens = set()
+        self.keyboard_recorder = KeyboardRecorder()
 
     def authorised_fetch(self, callback):
         try:
@@ -60,6 +62,7 @@ class App:
         return True
 
     def start(self):
+        self.keyboard_recorder.start()
         self.router.setup()
         self.router.route('agent_list' if self.sign_in() else 'sign_in')
 
@@ -67,6 +70,7 @@ class App:
         for token in list(*self.tokens):
             self.stop_runner(token)
         Gtk.main_quit()
+        self.keyboard_recorder.stop()
 
     def start_runner(self, agent_profile):
         response = self.authorised_fetch(

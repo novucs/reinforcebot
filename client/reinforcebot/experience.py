@@ -11,42 +11,14 @@ from reinforcebot.config import EXPERIENCE_BUFFER_SIZE, FRAME_SIZE, OBSERVATION_
     UPDATE_TARGET_PARAMETERS_STEPS
 
 
-class KeyboardBuffer:
-    def __init__(self):
-        self.keyboard_listener = keyboard.Listener(
-            on_press=lambda key: self.on_press(key),
-            on_release=lambda key: self.on_release(key),
-        )
-        self.pressed_keys = set()
-        self.released_keys = set()
-
-    def on_press(self, key):
-        self.pressed_keys.add(key.vk if isinstance(key, keyboard.KeyCode) else key.value.vk)
-
-    def on_release(self, key):
-        self.released_keys.add(key.vk if isinstance(key, keyboard.KeyCode) else key.value.vk)
-
-    def stop(self):
-        self.keyboard_listener.stop()
-
-    def start(self):
-        self.keyboard_listener.start()
-
-    def read(self):
-        keys = self.pressed_keys.copy()
-        self.pressed_keys -= self.released_keys
-        return keys
-
-
 def convert_frame(frame):
     frame = frame.convert('L')
     frame = resize(frame, FRAME_SIZE)
     return np.array(frame)
 
 
-def record_new_user_experience(screen_recorder, agent_profile):
-    keyboard_recorder = KeyboardBuffer()
-    keyboard_recorder.start()
+def record_new_user_experience(screen_recorder, keyboard_recorder, agent_profile):
+    keyboard_recorder.read()
     buffer = DynamicExperienceReplayBuffer(OBSERVATION_SPACE, EXPERIENCE_BUFFER_SIZE)
     previous_frame = np.zeros(FRAME_SIZE)
     frame = convert_frame(screen_recorder.cache)
@@ -67,15 +39,13 @@ def record_new_user_experience(screen_recorder, agent_profile):
 
         previous_frame, frame = frame, next_frame
 
-    keyboard_recorder.stop()
     agent_profile.load_initial_user_experience(*buffer.build())
 
 
-def record_user_experience(screen_recorder, agent_profile):
+def record_user_experience(screen_recorder, keyboard_recorder, agent_profile):
+    keyboard_recorder.read()
     action_mapping, buffer = agent_profile.action_mapping, agent_profile.user_experience
 
-    keyboard_recorder = KeyboardBuffer()
-    keyboard_recorder.start()
     allowed_keys = set(itertools.chain(*action_mapping.values()))
     previous_frame = np.zeros(FRAME_SIZE)
     frame = convert_frame(screen_recorder.cache)
@@ -102,12 +72,9 @@ def record_user_experience(screen_recorder, agent_profile):
 
         previous_frame, frame = frame, next_frame
 
-    keyboard_recorder.stop()
 
-
-def handover_control(screen_recorder, trainer, choose_preference):
-    keyboard_recorder = KeyboardBuffer()
-    keyboard_recorder.start()
+def handover_control(screen_recorder, keyboard_recorder, trainer, choose_preference):
+    keyboard_recorder.read()
     controller = keyboard.Controller()
     pressed_keys = set()
     previous_frame = np.zeros(FRAME_SIZE)
@@ -150,5 +117,3 @@ def handover_control(screen_recorder, trainer, choose_preference):
 
     for key in pressed_keys:
         controller.release(KeyCode.from_vk(key))
-
-    keyboard_recorder.stop()
