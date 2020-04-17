@@ -8,7 +8,3 @@ torch==1.4.0
 torchvision==0.5.0
 requests==2.23.0
 reinforcebotagent==0.0.3
-
-matplotlib==3.2.1
-gym==0.15.3
-gym[atari]==0.15.3

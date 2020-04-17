@@ -6,6 +6,7 @@ from PIL import Image
 from pynput import mouse
 
 from reinforcebot.messaging import notify
+from reinforcebot.resources import gnome_screenshot, wnckprop, xdotool
 
 
 class Recorder:
@@ -74,11 +75,11 @@ def select_window(callback):
         if pressed:
             return
 
-        subprocess.Popen(('gnome-screenshot', '-c', '-w'))
+        subprocess.Popen((gnome_screenshot(), '-c', '-w'))
         geometry = subprocess.check_output(
-            f"wnckprop --xid=$(xdotool getmouselocation --shell | sed -n 's/WINDOW=//p') | sed -n 's/Geometry (x, y, width, height): //p'",
+            f"{wnckprop()} --xid=$({xdotool()} getmouselocation --shell | sed -n 's/WINDOW=//p') | sed -n 's/Geometry (x, y, width, height): //p'",
             shell=True, stderr=subprocess.STDOUT).decode('utf-8')
-        x, y, width, height = map(int, geometry.split(', '))
+        x, y, width, height = map(int, geometry.strip().split('\n')[-1].split(', '))
         x, y, width, height = _limit_bounds(x, y, width, height)
         callback(x, y, width, height)
         mouse_listener.stop()
@@ -89,7 +90,7 @@ def select_window(callback):
 
 def select_area(callback):
     notify('Drag an area on your screen')
-    subprocess.Popen(('gnome-screenshot', '-c', '-a'))
+    subprocess.Popen((gnome_screenshot(), '-c', '-a'))
 
     def on_click(mouse_x, mouse_y, button, pressed):
         if pressed:
