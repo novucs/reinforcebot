@@ -57,9 +57,9 @@ class CloudComputeTrainer:
         if 'rewards' in experience:
             segment1, segment2, preference = experience['rewards']
             self.agent_profile.reward_buffer.write(segment1, segment2, preference)
-            payload['user_transition'] = {
-                'segment1': segment1.tolist(),
-                'segment2': segment2.tolist(),
+            payload['rewards'] = {
+                'segment1': [segment1[0].tolist(), segment1[1].tolist()],
+                'segment2': [segment2[0].tolist(), segment2[1].tolist()],
                 'preference': preference,
             }
 

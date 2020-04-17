@@ -119,6 +119,7 @@ SWAGGER_SETTINGS = {
 
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(1e9)
 
 CLOUD_COMPUTE_RUNNER_NODES = {
     node.split(',')[0]: node.split(',')[1]

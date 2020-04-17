@@ -110,6 +110,8 @@ class App:
         response = self.authorised_fetch(
             lambda headers: requests.delete(API_URL + f'runners/{token}/', headers=headers))
         if response.status_code != 200:
+            return None
+        if 400 <= response.status_code < 500:
             alert(self.router.current_page.window, response.json()['detail'])
             return None
         return response.json()['parameters']

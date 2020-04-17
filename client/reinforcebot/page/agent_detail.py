@@ -6,7 +6,7 @@ from reinforcebotagent.trainer import LocalTrainer
 from torchvision.transforms.functional import resize
 
 from reinforcebot import screen
-from reinforcebot.config import BASE_URL, FRAME_DISPLAY_SIZE, FRAME_SIZE
+from reinforcebot.config import BASE_URL, FRAME_DISPLAY_SIZE, FRAME_SIZE, SEGMENT_SIZE
 from reinforcebot.experience import handover_control, record_new_user_experience, record_user_experience
 from reinforcebot.messaging import alert, notify
 from reinforcebot.page.human_preference_chooser import HumanPreferenceChooser
@@ -157,7 +157,7 @@ class AgentDetailPage:
 
             self.control_lock.acquire()
             self.recording = True
-            notify('Your agent is now controlling the keyboard. Press ESC to stop. Press F1 to manage rewards.')
+            notify('Your agent is now controlling the keyboard. Press ESC to stop. Press F3 to manage rewards.')
             handover_control(self.screen_recorder, self.app.keyboard_recorder, trainer, self.open_preference_chooser)
             stopped_early = not trainer.running
 
@@ -183,6 +183,10 @@ class AgentDetailPage:
         self.using_cloud_compute = not self.using_cloud_compute
 
     def open_preference_chooser(self, trainer):
+        if self.agent_profile.agent_experience.size <= SEGMENT_SIZE:
+            notify('Not enough experience has been collected to select preferences')
+            return
+
         init_lock = Lock()
         done_lock = Lock()
 

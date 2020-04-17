@@ -74,6 +74,8 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(1e9)
+
 STATIC_URL = f'/{BASE_PATH}/static/'
 
 SESSION_LIMIT = int(os.environ.get('SESSION_LIMIT', default=5))

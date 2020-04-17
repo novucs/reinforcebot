@@ -70,8 +70,8 @@ class Session:
 
             if 'rewards' in experience:
                 rewards = experience['rewards']
-                segment1 = np.array(rewards['segment1'])
-                segment2 = np.array(rewards['segment2'])
+                segment1 = (np.array(rewards['segment1'][0]), np.array(rewards['segment1'][1]))
+                segment2 = (np.array(rewards['segment2'][0]), np.array(rewards['segment2'][1]))
                 preference = rewards['preference']
                 parsed['rewards'] = (segment1, segment2, preference)
 
