@@ -1,6 +1,8 @@
 # ReinforceBot Client
 The ReinforceBot client, used for RL agent creation and training on the desktop.
 
+**Note:** *This has only been tested on Manjaro GNOME, other distributions may differ.*
+
 ## Requirements
 * Linux on Xorg
 * Optionally CUDA (10.2)
