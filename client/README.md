@@ -5,12 +5,20 @@ The ReinforceBot client, used for RL agent creation and training on the desktop.
 
 ## Requirements
 * Linux on Xorg
+* Python 3.7
 * Optionally CUDA (10.2)
 
 ## Installation
+1.  Setup the Python virtual environment.
+    ```bash
+    python -m venv venv
+    venv/bin/python -m pip install -r requirements.txt
+    ```
+
 1.  Build the binary.
     ```bash
-    ./package.sh
+    venv/bin/python -m pip install pyinstaller
+    venv/bin/pyinstaller --noconfirm --name reinforcebot --add-data resources:resources reinforcebot/main.py
     ```
 
 2.  Install the binary.

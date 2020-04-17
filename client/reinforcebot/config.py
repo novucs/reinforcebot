@@ -3,8 +3,6 @@ import os
 import sys
 from pathlib import Path
 
-BASE_URL = 'http://localhost:8080/'
-API_URL = BASE_URL + 'api/'
 BASE_PATH = os.path.join(str(Path.home()), 'ReinforceBot')
 SESSION_FILE = os.path.join(BASE_PATH, 'session.json')
 AGENTS_PATH = os.path.join(BASE_PATH, 'agents')
@@ -17,7 +15,10 @@ os.makedirs(CACHE_PATH, exist_ok=True)
 
 if not os.path.exists(CONFIG_PATH):
     with open(CONFIG_PATH, 'w') as config_file:
+        base_url = 'http://reinforcebot.novucs.net/'
         json.dump({
+            'BASE_URL': base_url,
+            'API_URL': base_url + 'api/',
             'FRAME_DISPLAY_SIZE': (256, 256),
             'STEP_SECONDS': 0.1,
             'SEGMENT_SIZE': int(2 / 0.1),
@@ -30,6 +31,8 @@ if not os.path.exists(CONFIG_PATH):
 
 with open(CONFIG_PATH, 'r') as config_file:
     user_config = json.load(config_file)
+    BASE_URL = user_config['BASE_URL']
+    API_URL = user_config['API_URL']
     FRAME_DISPLAY_SIZE = user_config['FRAME_DISPLAY_SIZE']
     STEP_SECONDS = user_config['STEP_SECONDS']
     SEGMENT_SIZE = user_config['SEGMENT_SIZE']
