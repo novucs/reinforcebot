@@ -3,7 +3,7 @@ import {BASE_URL, displayErrors, ensureSignedIn, fetchMe, getAuthorization, refr
 import {Button, Container, Form, Grid, Header, Icon, Message, Segment} from "semantic-ui-react";
 import logo from "../icon.svg";
 import TopMenu from "../components/TopMenu";
-import Footer from "../Footer";
+import Footer from "../components/Footer";
 import {SemanticToastContainer, toast} from "react-semantic-toasts";
 import {CardElement, ElementsConsumer} from "@stripe/react-stripe-js";
 

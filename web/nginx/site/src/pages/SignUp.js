@@ -3,7 +3,7 @@ import {BASE_URL, displayErrors, ensureSignedOut, fetchMe, signIn} from '../Util
 import {Button, Form, Grid, Header, Message, Segment} from "semantic-ui-react";
 import logo from "../icon.svg";
 import TopMenu from "../components/TopMenu";
-import Footer from "../Footer";
+import Footer from "../components/Footer";
 
 export default class SignUp extends React.Component {
 

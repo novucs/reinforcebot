@@ -1,7 +1,7 @@
 import React from 'react';
 import TopMenu from "../components/TopMenu";
 import {Container, Divider, Grid, Header, Input, Segment} from "semantic-ui-react";
-import Footer from "../Footer";
+import Footer from "../components/Footer";
 import {BASE_URL, fetchMe, fetchUsers, getAuthorization, refreshJWT} from "../Util";
 import logo from "../icon.svg";
 import {SemanticToastContainer} from 'react-semantic-toasts';

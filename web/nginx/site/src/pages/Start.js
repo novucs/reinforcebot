@@ -2,7 +2,7 @@ import React from 'react';
 import {Button, Container, Header} from "semantic-ui-react";
 import logo from '../icon.svg'
 import TopMenu from "../components/TopMenu";
-import Footer from "../Footer";
+import Footer from "../components/Footer";
 import download from '../clientbinary'
 import {fetchMe} from "../Util";
 

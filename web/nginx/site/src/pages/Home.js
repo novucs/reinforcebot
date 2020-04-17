@@ -3,7 +3,7 @@ import {Button, Container, Grid, Header, Icon, Image, Segment} from 'semantic-ui
 import whiteLogo from "../white-logo.svg";
 import problemImg from "../problem.png";
 import solutionImg from "../solution.png";
-import Footer from "../Footer";
+import Footer from "../components/Footer";
 import TopMenu from "../components/TopMenu";
 import {fetchMe} from "../Util";
 

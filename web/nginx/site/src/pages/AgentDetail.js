@@ -17,7 +17,7 @@ import {
   Segment,
   Table
 } from "semantic-ui-react";
-import Footer from "../Footer";
+import Footer from "../components/Footer";
 import logo from "../icon.svg";
 import {BASE_URL, fetchMe, fetchUsers, getAuthorization, hasJWT, refreshJWT} from "../Util";
 import Moment from 'moment';

@@ -7,6 +7,7 @@
 * A web browser
 
 ## QuickStart
+Start stripe listener.
 
 ```bash
 stripe listen \
@@ -17,7 +18,16 @@ stripe listen \
 
 Copy Stripe webhook secret into `./api/.env.dev -> STRIPE_WEBHOOK_SECRET`
 
+Gzip a tarball of the desktop client into the `blobs` directory. Desktop client
+build instructions can be found in `../client/README.md`.
+
+```bash
+tar -czvf blobs/reinforcebot-client.tar.gz -C ../client/dist reinforcebot
 ```
+
+Start and initialise all containers.
+
+```bash
 docker-compose up -d
 docker-compose exec api python manage.py migrate
 docker-compose exec api python manage.py collectstatic --no-input

@@ -37,6 +37,7 @@ services:
     build: ./nginx
     volumes:
       - static_data:/usr/share/nginx/static/
+      - ./blobs:/usr/share/nginx/blobs/
     ports:
       - 8080:80
     depends_on:
