@@ -1,4 +1,6 @@
-export const BASE_URL = 'http://localhost:8080';
+export const BASE_URL = window.location.protocol + (
+  window.location.origin.includes('localhost') ?
+    '//localhost:8080' : '//reinforcebot.novucs.net');
 
 export function displayErrors(...errors) {
   return errors.flatMap((e) => displayError(e));
@@ -145,7 +147,7 @@ export function deleteAgent(id, callback) {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-        ...getAuthorization(),
+      ...getAuthorization(),
     },
   }).then(response => {
     if (response.status === 401) {
@@ -172,7 +174,7 @@ export function fetchMe(callback) {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-        ...getAuthorization(),
+      ...getAuthorization(),
     },
   }).then(response => {
     if (response.status === 401) {

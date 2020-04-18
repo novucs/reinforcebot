@@ -40,6 +40,7 @@ services:
       - ./blobs:/usr/share/nginx/blobs/
     ports:
       - 8080:80
+      - 80:80
     depends_on:
       - api
       - runner

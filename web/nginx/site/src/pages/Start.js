@@ -3,7 +3,7 @@ import {Button, Container, Divider, Grid, Header, Image, Input, Segment} from "s
 import logo from '../icon.svg'
 import TopMenu from "../components/TopMenu";
 import Footer from "../components/Footer";
-import {fetchMe} from "../Util";
+import {BASE_URL, fetchMe} from "../Util";
 import {CopyToClipboard} from "react-copy-to-clipboard/lib/Component";
 import {SemanticToastContainer, toast} from "react-semantic-toasts";
 import clientLogin from "../client-login.png";
@@ -85,9 +85,9 @@ export default class Start extends React.Component {
           <p>
             This installation method runs a script with root privileges. It is
             advisable to check scripts before running them. You may download this
-            script <a href='/blobs/install.sh'>here</a>.
+            script <a href={BASE_URL + '/blobs/install.sh'}>here</a>.
           </p>
-          <CopyableCommand command={'sudo sh -c "$(wget -O- https://reinforcebot.novucs.net/blobs/install.sh)"'}/>
+          <CopyableCommand command={'sudo sh -c "$(wget -O- ' + BASE_URL + '/blobs/install.sh)"'}/>
           <h4>Manual</h4>
           <p>
             Download and extract the package below, then run the executable
@@ -96,7 +96,7 @@ export default class Start extends React.Component {
           <Button
             primary
             download
-            href='/blobs/reinforcebot-client.tar.gz'
+            href={BASE_URL + '/blobs/reinforcebot-client.tar.gz'}
             icon='download'
             content='Download'
             size='tiny'
