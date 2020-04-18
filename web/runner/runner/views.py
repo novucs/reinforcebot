@@ -10,6 +10,7 @@ from reinforcebotagent.agent_profile import AgentProfile
 from reinforcebotagent.trainer import LocalTrainer
 
 from runner.settings import API_URL, RUNNER_KEY, SESSION_LIMIT
+from runner.settings import MAX_EXPERIENCE_BUFFER_SIZE, MAX_REWARD_BUFFER_SIZE
 
 
 class Session:
@@ -21,6 +22,9 @@ class Session:
 
         self.token = data['token']
         self.config = data['config']
+        self.config['EXPERIENCE_BUFFER_SIZE'] = max(0, min(MAX_EXPERIENCE_BUFFER_SIZE,
+                                                           self.config['EXPERIENCE_BUFFER_SIZE']))
+        self.config['REWARD_BUFFER_SIZE'] = max(0, min(MAX_REWARD_BUFFER_SIZE, self.config['REWARD_BUFFER_SIZE']))
         self.action_mapping = {k: set(v) for k, v in data['action_mapping'].items()}
 
         self.profile = AgentProfile(self.config)
