@@ -3,7 +3,6 @@ import {Button, Container, Divider, Grid, Header, Image, Input, Segment} from "s
 import logo from '../icon.svg'
 import TopMenu from "../components/TopMenu";
 import Footer from "../components/Footer";
-import download from '../clientbinary'
 import {fetchMe} from "../Util";
 import {CopyToClipboard} from "react-copy-to-clipboard/lib/Component";
 import {SemanticToastContainer, toast} from "react-semantic-toasts";
@@ -75,7 +74,7 @@ export default class Start extends React.Component {
           <p>
             Currently ReinforceBot supports recording, learning from, and
             performing keyboard interactions on any desktop application.
-            Xorg on Linux is supported, but more desktop environments are aimed
+            Xorg on Linux is supported and more desktop environments are aimed
             to be supported in the future. All testing has been limited to
             Manjaro GNOME, so there may be unresolved issues on other
             distributions for this early development stage prototype.
