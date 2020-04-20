@@ -1,7 +1,7 @@
 set -e
 mkdir -p /tmp
 cd /tmp
-wget http://localhost:8080/blobs/reinforcebot-client.tar.gz -O reinforcebot-client.tar.gz
+wget http://reinforcebot.novucs.net/blobs/reinforcebot-client.tar.gz -O reinforcebot-client.tar.gz
 tar -xzvf reinforcebot-client.tar.gz -C /opt
 rm -rf reinforcebot-client.tar.gz
 mkdir -p /usr/local/share/applications
