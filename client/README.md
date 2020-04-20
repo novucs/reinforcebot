@@ -12,13 +12,14 @@ The ReinforceBot client, used for RL agent creation and training on the desktop.
 1.  Setup the Python virtual environment.
     ```bash
     python -m venv venv
-    venv/bin/python -m pip install -r requirements.txt
+    source venv/bin/activate
+    pip install -r requirements.txt
+    pip install pyinstaller
     ```
 
 1.  Build the binary.
     ```bash
-    venv/bin/python -m pip install pyinstaller
-    venv/bin/pyinstaller --noconfirm --name reinforcebot --add-data resources:resources reinforcebot/main.py
+    pyinstaller --noconfirm --name reinforcebot --add-data resources:resources reinforcebot/main.py
     ```
 
 2.  Install the binary.

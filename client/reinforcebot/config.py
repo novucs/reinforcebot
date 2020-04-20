@@ -15,7 +15,7 @@ os.makedirs(CACHE_PATH, exist_ok=True)
 
 if not os.path.exists(CONFIG_PATH):
     with open(CONFIG_PATH, 'w') as config_file:
-        base_url = 'http://reinforcebot.novucs.net/'
+        base_url = 'https://reinforcebot.novucs.net/'
         json.dump({
             'BASE_URL': base_url,
             'API_URL': base_url + 'api/',
